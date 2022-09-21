@@ -23,13 +23,53 @@
 
 # frozen_string_literal: true
 
-# The main module
 module Windu
 
-  module API
+  # The class for dealing with Software Title Requirements in the
+  # TitleEditor
+  #
+  # A requirement is one criterion, a group of which define which computers
+  # have the title installed, regardless of version.
+  class Requirement < Windu::BaseClasses::JSONObject
 
-    extend Windu::API::DefaultConnection
+    # Mixins
+    ######################
 
-  end
+    include Windu::Mixins::APICollection
 
-end
+    # Constants
+    ######################
+
+    RSRC_PATH = 'requirements'
+
+    # Attributes
+    ######################
+
+    JSON_ATTRIBUTES = {
+
+      # @!attribute requirementId
+      # @return [Integer] The id number of this requirement in the Title Editor
+      requirementId: {
+        class: :Integer,
+        identifier: :primary
+      },
+
+      # @!attribute softwareTitleId
+      # @return [Integer] The id number of the title which uses this requirement
+      softwareTitleId: {
+        class: :Integer
+      }
+
+    }.freeze
+
+    # Public Class Methods
+    ######################
+
+    ####
+    def self.fetch(*_args)
+      raise Windu::UnsupportedError, 'Requirements are fetched as part of the SoftwareTitle that contains them'
+    end
+
+  end # class Requirement
+
+end # Module Windu

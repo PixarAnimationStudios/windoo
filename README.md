@@ -13,8 +13,8 @@ url = 'https://chrisltest@xi3wix5y.appcatalog.jamfcloud.com'
 
 Windu.connect url, pw: :prompt
 
-t1 = Windu::API::SoftwareTitle.fetch softwareTitleId: 1
-#  => #<Windu::API::SoftwareTitle:0x00007fdb478cdf00...
+t1 = Windu::SoftwareTitle.fetch softwareTitleId: 1
+#  => #<Windu::SoftwareTitle:0x00007fdb478cdf00...
 t1.name
 #  => "Test"
 t1.publisher
@@ -30,7 +30,7 @@ t1.currentVersion
 t1.patches.count
 #  => 3
 t1.patches.first.class
-#  => Windu::API::Patch
+#  => Windu::Patch
 t1.patches.first.version
 #  => "5.2.3"
 t1.patches.last.version
@@ -41,11 +41,12 @@ t1.patches.first.killApps.first.bundleId
 #  => "com.pixar.test"
 
 t1.extensionAttributes.first.script
+#  =>
 # #!/bin/zsh
 #
 # # true if the unix epoch is even, false if its odd
 # [ $((`date +%s` % 2)) -eq 0 ]  && result=true || result=false
 #
- # echo <result>$result</result>
+# echo <result>$result</result>
 ```
 More documentation is on the way

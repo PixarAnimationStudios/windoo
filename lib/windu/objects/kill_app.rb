@@ -20,36 +20,57 @@
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
 #
-#
 
-# main module
+# frozen_string_literal: true
+
 module Windu
 
-  module API
+  class KillApp < Windu::BaseClasses::JSONObject
 
-    module Mixins
+    # Mixins
+    ######################
 
-      # by default, instances of JSONObject subclasses are mutable
-      # as a whole, even if some of their attributes are not.
-      #
-      # To make them immutable, they should extend this module
-      #    Windu::API::Mixins::Immutable,
-      # which overrides the mutable? method
-      module Immutable
+    include Windu::Mixins::APICollection
 
-        def self.extended(extender)
-          Windu.verbose_extend extender, self
-        end
+    # Constants
+    ######################
 
-        # this class is immutable
-        def mutable?
-          false
-        end
+    RSRC_PATH = 'killapps'
 
-      end # module Immutable
+    # Attributes
+    ######################
 
-    end # module Mixins
+    JSON_ATTRIBUTES = {
 
-  end # module CAPIore
+      # @!attribute killAppId
+      # @return [Integer] The id number of this kill app
+      killAppId: {
+        class: :Integer,
+        identifier: :primary
+      },
 
-end # module Windu
+      # @!attribute patchId
+      # @return [Integer] The id number of the patch which uses this
+      #   kill app
+      patchId: {
+        class: :Integer
+      },
+
+      # @!attribute bundleId
+      # @return [String] The bundle id of the app that must be quit
+      #   e.g. com.apple.Safari
+      bundleId: {
+        class: :String
+      },
+
+      # @!attribute appName
+      # @return [String] The name of the app that must be quit
+      appName: {
+        class: :String
+      }
+
+    }
+
+  end # class KillApp
+
+end # Module Windu

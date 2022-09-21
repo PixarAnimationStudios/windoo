@@ -20,61 +20,53 @@
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
 #
+#
 
 # frozen_string_literal: true
 
 module Windu
 
-  module API
+  class Connection
 
-    class KillApp < Windu::API::BaseClasses::JSONObject
+    # When using included modules to define constants,
+    # the constants have to be defined at the level where they will be
+    # referenced, or else they
+    # aren't available to other broken-out-and-included sub modules
+    #
+    # See https://cultivatehq.com/posts/ruby-constant-resolution/ for
+    # an explanation
 
-      # Mixins
-      ######################
+    HTTPS_SCHEME = 'https'
+    SSL_PORT = 443
+    DFT_SSL_VERSION = 'TLSv1_2'
 
-      include Windu::API::Mixins::APICollection
+    DFT_OPEN_TIMEOUT = 60
+    DFT_TIMEOUT = 60
 
-      # Constants
-      ######################
+    # the entire API is at this path
+    RSRC_VERSION = 'v2'
 
-      RSRC_PATH = 'killapps'
+    # Only these variables are displayed with PrettyPrint
+    # This avoids displaying lots of extraneous data
+    PP_VARS = %i[
+      @name
+      @connected
+      @open_timeout
+      @timeout
+      @connect_time
+    ].freeze
 
-      # Attributes
-      ######################
+    # This module defines constants related to API connctions, used throughout
+    # the connection class and elsewhere.
+    ##########################################
+    module Constants
 
-      JSON_ATTRIBUTES = {
+      def self.included(includer)
+        Windu.verbose_include(includer, self)
+      end
 
-        # @!attribute killAppId
-        # @return [Integer] The id number of this kill app
-        killAppId: {
-          class: :Integer,
-          identifier: :primary
-        },
+    end # module Constants
 
-        # @!attribute patchId
-        # @return [Integer] The id number of the patch which uses this
-        #   kill app
-        patchId: {
-          class: :Integer
-        },
+  end # class Connection
 
-        # @!attribute bundleId
-        # @return [String] The bundle id of the app that must be quit
-        #   e.g. com.apple.Safari
-        bundleId: {
-          class: :String
-        },
-
-        # @!attribute appName
-        # @return [String] The name of the app that must be quit
-        appName: {
-          class: :String
-        }
-
-      }
-
-    end # class KillApp
-
-  end # Module API
-
-end # Module Windu
+end # module Windu

@@ -96,7 +96,7 @@ module WinduZeitwerkConfig
     #  Jamf::Group
     ###################################################
 
-    loader.collapse("#{__dir__}/api/objects")
+    loader.collapse("#{__dir__}/objects")
 
     ##### Inflected Paths
     ################################
@@ -108,7 +108,6 @@ module WinduZeitwerkConfig
     # defines 'OAPIObject'
     ###############################################
 
-    loader.inflector.inflect 'api' => 'API'
     loader.inflector.inflect 'json_object' => 'JSONObject'
     loader.inflector.inflect 'api_collection' => 'APICollection'
 

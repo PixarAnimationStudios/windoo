@@ -19,53 +19,35 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
-#
 
 # frozen_string_literal: true
 
-# Core Standard Libraries
-######
-require 'English'
-
-# Load other gems
-######
-require 'pixar-ruby-extensions'
-require 'faraday' # >= 0.17.0
-require 'faraday_middleware' # >= 0.13.0
-
-# Zeitwerk
-######
-
-# Configure the Zeitwerk loader, See https://github.com/fxn/zeitwerk
-# This also defines other Windu module methods related to loading
-#
-require 'windu/zeitwerk_config'
-
-# the `Zeitwerk::Loader.for_gem` creates the loader object, and must
-# happen in this file, so we pass it into a method defined in
-# zeitwerk_config
-#
-# BE CAREFUL - Do not load anything above here that
-# defines the Windu:: module namespace!
-WinduZeitwerkConfig.setup_zeitwerk_loader Zeitwerk::Loader.for_gem
-
-# Load windu stuff here that we don't autoload
-require 'windu/exceptions'
-
-# The main module
+# main module
 module Windu
 
-  extend Windu::Loading
-  include Windu::Constants
-  extend Windu::Utility
-  extend Windu::DefaultConnection
+  # The class for dealing with the criteria of Patch Components
+  class ComponentCriterion < Windu::BaseClasses::JSONObject
 
-  # the single instance of our configuration object
-  def self.config
-    Windu::Configuration.instance
-  end
+    # Attributes
+    ######################
+
+    JSON_ATTRIBUTES = {
+
+      # @!attribute criteriaId
+      # @return [Integer] The id number of this criterion
+      criteriaId: {
+        class: :Integer,
+        identifier: :primary
+      },
+
+      # @!attribute componentId
+      # @return [Integer] The id number of the component which uses this criterion
+      componentId: {
+        class: :Integer
+      }
+
+    }.freeze
+
+  end # class ComponentCriterion
 
 end # module Windu
-
-# testing zeitwerk loading, if the correct file is present
-WinduZeitwerkConfig.eager_load_for_testing

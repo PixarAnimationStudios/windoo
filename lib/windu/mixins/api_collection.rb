@@ -24,53 +24,53 @@
 
 # frozen_string_literal: true
 
+# main module
 module Windu
 
-  module API
+  module Mixins
 
-    class Connection
+    # This should be included into The TitleEditor and
+    # Admin classes that represent API collections in their
+    # respective servers.
+    #
+    # It defines core methods for dealing with such collections.
+    module APICollection
 
-      # When using included modules to define constants,
-      # the constants have to be defined at the level where they will be
-      # referenced, or else they
-      # aren't available to other broken-out-and-included sub modules
-      #
-      # See https://cultivatehq.com/posts/ruby-constant-resolution/ for
-      # an explanation
+      # when this module is included, also extend our Class Methods
+      def self.included(includer)
+        Windu.verbose_include includer, self
+        includer.extend(ClassMethods)
+      end
 
-      HTTPS_SCHEME = 'https'
-      SSL_PORT = 443
-      DFT_SSL_VERSION = 'TLSv1_2'
+      # Class Methods
+      #####################################
+      module ClassMethods
 
-      DFT_OPEN_TIMEOUT = 60
-      DFT_TIMEOUT = 60
-
-      # the entire API is at this path
-      RSRC_VERSION = 'v2'
-
-      # Only these variables are displayed with PrettyPrint
-      # This avoids displaying lots of extraneous data
-      PP_VARS = %i[
-        @name
-        @connected
-        @open_timeout
-        @timeout
-        @connect_time
-      ].freeze
-
-      # This module defines constants related to API connctions, used throughout
-      # the connection class and elsewhere.
-      ##########################################
-      module Constants
-
-        def self.included(includer)
-          Windu.verbose_include(includer, self)
+        def self.extended(extender)
+          Windu.verbose_extend extender, self
         end
 
-      end # module Constants
+        # @return [API Collection Member]
+        ####
+        def fetch(primary_ident)
+          new Windu.cnx.get("#{self::RSRC_PATH}/#{primary_ident}")
+        end
 
-    end # class Connection
+        ####
+        def delete(primary_ident)
+          Windu.cnx.delete("#{self::RSRC_PATH}/#{primary_ident}")
+        end
 
-  end # module API
+      end # module ClassMethods
+
+      # Public Instance Methods
+      ####################
+
+      ####
+      def save; end
+
+    end # module APICollection
+
+  end # module Mixins
 
 end # module Windu

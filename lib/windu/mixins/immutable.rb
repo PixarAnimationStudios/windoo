@@ -19,39 +19,33 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
-
-# frozen_string_literal: true
+#
+#
 
 # main module
 module Windu
 
-  module API
+  module Mixins
 
-    # The class for dealing with the criteria of Patch Components
-    class ComponentCriterion < Windu::API::BaseClasses::JSONObject
+    # by default, instances of JSONObject subclasses are mutable
+    # as a whole, even if some of their attributes are not.
+    #
+    # To make them immutable, they should extend this module
+    #    Windu::Mixins::Immutable,
+    # which overrides the mutable? method
+    module Immutable
 
-      # Attributes
-      ######################
+      def self.extended(extender)
+        Windu.verbose_extend extender, self
+      end
 
-      JSON_ATTRIBUTES = {
+      # this class is immutable
+      def mutable?
+        false
+      end
 
-        # @!attribute criteriaId
-        # @return [Integer] The id number of this criterion
-        criteriaId: {
-          class: :Integer,
-          identifier: :primary
-        },
+    end # module Immutable
 
-        # @!attribute componentId
-        # @return [Integer] The id number of the component which uses this criterion
-        componentId: {
-          class: :Integer
-        }
-
-      }.freeze
-
-    end # class ComponentCriterion
-
-  end # module API
+  end # module Mixins
 
 end # module Windu

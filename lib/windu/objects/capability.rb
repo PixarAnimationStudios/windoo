@@ -23,49 +23,53 @@
 
 # frozen_string_literal: true
 
-# Core Standard Libraries
-######
-require 'English'
-
-# Load other gems
-######
-require 'pixar-ruby-extensions'
-require 'faraday' # >= 0.17.0
-require 'faraday_middleware' # >= 0.13.0
-
-# Zeitwerk
-######
-
-# Configure the Zeitwerk loader, See https://github.com/fxn/zeitwerk
-# This also defines other Windu module methods related to loading
-#
-require 'windu/zeitwerk_config'
-
-# the `Zeitwerk::Loader.for_gem` creates the loader object, and must
-# happen in this file, so we pass it into a method defined in
-# zeitwerk_config
-#
-# BE CAREFUL - Do not load anything above here that
-# defines the Windu:: module namespace!
-WinduZeitwerkConfig.setup_zeitwerk_loader Zeitwerk::Loader.for_gem
-
-# Load windu stuff here that we don't autoload
-require 'windu/exceptions'
-
-# The main module
 module Windu
 
-  extend Windu::Loading
-  include Windu::Constants
-  extend Windu::Utility
-  extend Windu::DefaultConnection
+  # The class for dealing with the capabilities of Patches in the
+  # Title Editor
+  #
+  # A capability is one criterion, a group of which define which computers
+  # are capable of running, and this allowed to install, a Patch.
+  class Capability < Windu::BaseClasses::Criterion
 
-  # the single instance of our configuration object
-  def self.config
-    Windu::Configuration.instance
-  end
+    # Mixins
+    ######################
 
-end # module Windu
+    include Windu::Mixins::APICollection
 
-# testing zeitwerk loading, if the correct file is present
-WinduZeitwerkConfig.eager_load_for_testing
+    # Constants
+    ######################
+
+    RSRC_PATH = 'capabilities'
+
+    # Attributes
+    ######################
+
+    JSON_ATTRIBUTES = {
+
+      # @!attribute capabilityId
+      # @return [Integer] The id number of this capability
+      capabilityId: {
+        class: :Integer,
+        identifier: :primary
+      },
+
+      # @!attribute patchId
+      # @return [Integer] The id number of the Patch which uses this capability
+      patchId: {
+        class: :Integer
+      }
+
+    }.freeze
+
+    # Public Class Methods
+    ######################
+
+    ####
+    def self.fetch(*_args)
+      raise Windu::UnsupportedError, 'Capabilities are fetched as part of the Patch that contains them'
+    end
+
+  end # class Capability
+
+end # Module Windu
