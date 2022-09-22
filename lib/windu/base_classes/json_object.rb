@@ -164,7 +164,7 @@ module Windu
       # @return [Object] The validated, possibly converted, value.
       #
       def self.validate_attr(attr_name, value)
-        attr_def = self::JSON_ATTRIBUTES[attr_name]
+        attr_def = json_attributes[attr_name]
         raise ArgumentError, "Unknown attribute: #{attr_name} for #{self} objects" unless attr_def
 
         # validate the value based on the OAPI definition.
@@ -220,7 +220,6 @@ module Windu
             return if new_value == old_value
 
             instance_variable_set("@#{attr_name}", new_value)
-            note_unsaved_change attr_name, old_value
           end # define method
         end
       end # create_setters
@@ -258,7 +257,6 @@ module Windu
           return if new_value == old_value
 
           instance_variable_set("@#{attr_name}", new_value)
-          note_unsaved_change attr_name, old_value
         end # define method
 
         return unless attr_def[:aliases]
@@ -281,8 +279,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
 
         # always have a << alias
@@ -306,8 +302,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
       end # create_prepend_setters
       private_class_method :create_prepend_setters
@@ -327,8 +321,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
       end # create_insert_setters
       private_class_method :create_insert_setters
@@ -348,8 +340,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
       end # create_insert_setters
       private_class_method :create_delete_setters
@@ -369,8 +359,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
       end # create_insert_setters
       private_class_method :create_delete_at_setters
@@ -390,8 +378,6 @@ module Windu
 
           # now validate the array as a whole for oapi constraints
           Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-
-          note_unsaved_change attr_name, old_array
         end # define method
       end # create_insert_setters
       private_class_method :create_delete_if_setters
@@ -416,9 +402,6 @@ module Windu
 
       # Public Instance Methods
       #####################
-
-      # @return [Hash] Any changes that have not been saved to the server yet
-      attr_reader :unsaved_changes
 
       # @return [Hash] The data to be sent to the API, as a Hash
       #  to be converted to JSON before sending to the JPAPI
@@ -474,18 +457,6 @@ module Windu
         return if instance_variable_get("@#{attr_name}").is_a? Array
 
         instance_variable_set("@#{attr_name}", [])
-      end
-
-      def note_unsaved_change(attr_name, old_value)
-        return unless self.class.mutable?
-
-        @unsaved_changes ||= {}
-        new_val = instance_variable_get "@#{attr_name}"
-        if @unsaved_changes[attr_name]
-          @unsaved_changes[attr_name][:new] = new_val
-        else
-          @unsaved_changes[attr_name] = { old: old_value, new: new_val }
-        end
       end
 
       # wrapper for class method

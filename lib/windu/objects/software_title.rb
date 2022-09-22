@@ -32,6 +32,8 @@ module Windu
     ######################
 
     include Windu::Mixins::APICollection
+    include Windu::Mixins::SoftwareTitle::ExtensionAttributes
+    include Windu::Mixins::SoftwareTitle::Requirements
 
     # Constants
     ######################
@@ -50,6 +52,8 @@ module Windu
     # NOTE: the docs also mention that this data for create and update has
     # keys 'appName' and 'bundleId'  but those keys don't show up in the
     # web UI and are always nil in the API data.
+    #
+    # TODO: If this is even needed, use the JSON_ATTRIBUTES to identify them.
     ATTRIBUTES_FOR_SAVE = %i[
       id
       name
@@ -191,7 +195,8 @@ module Windu
       softwareTitleId: {
         class: :Integer,
         # primary means this is the one used to fetch via API calls
-        identifier: :primary
+        identifier: :primary,
+        readonly: true
       },
 
       # @!attribute id
@@ -277,7 +282,7 @@ module Windu
       },
 
       # @!attribute requirements
-      #   @return [Array<Windu::BaseClasses::Requirement>] The requirements - criteria that
+      #   @return [Array<Windu::Requirement>] The requirements - criteria that
       #     define which computers have the software installed.
       requirements: {
         class: Windu::Requirement,
@@ -285,14 +290,17 @@ module Windu
       },
 
       # @!attribute patches
-      #   @return [Array<Windu::BaseClasses::Patch>] The patches available for this title
+      #   @return [Array<Windu::Patch>] The patches available for this title
       patches: {
         class: Windu::Patch,
         multi: true
       },
 
       # @!attribute extensionAttributes
-      #   @return [Array<Windu::BaseClasses::ExtensionAttribute>] The Extension Attributes used by this title
+      #   @return [Array<Windu::ExtensionAttribute>] The Extension Attribute used by this title.
+      #     NOTE: This is plural, and an Array, but there can be only one of them per title.
+      #     To interact with it, use the instance methods #extensionAttribute,
+      #     #add_extensionAttribute, #update_extensionAttribute, #delete_extensionAttribute
       extensionAttributes: {
         class: Windu::ExtensionAttribute,
         multi: true
@@ -325,84 +333,6 @@ module Windu
     def autofill_requirements
       id = send self.class.primary_ident_key
       self.class.autofill_requirements id
-    end
-
-    # Add an ExtensionAttribute to this SoftwareTitle.
-    #
-    # When adding the EA via this method, it is added
-    # immediately to the server, there is no need to #save.
-    #
-    # @param key [String] The name of the extension attribute as
-    #   it appears in Jamf Pro
-    #   NOTE: must be unique in the Title Editor AND Jamf Pro.
-    #
-    # @param displayName [String] The name of the extension
-    #   attribute as it appears in Title Editor
-    #
-    # @param script [String] The script of that returns
-    #   the value of the Extension Attribute on a computer.
-    #   It must be a String that starts with '#!'
-    #
-    # @return [Integer] The id of the new Extension Attribute
-    #
-    def add_extension_attribute(key:, displayName:, script:)
-      new_ea = Windu::ExtensionAttribute.create(
-        key: key,
-        displayName: displayName,
-        script: script
-      )
-      new_ea.save container_id: primary_id
-      extensionAttributes_append new_ea
-    end
-
-    # Update an ExtensionAttribute an this SoftwareTitle.
-    #
-    # When updating the EA via this method, it is added
-    # immediately to the server, there is no need to #save.
-    #
-    # @param key [String] The name of the extension attribute as
-    #   it appears in Jamf Pro
-    #   NOTE: must be unique in the Title Editor AND Jamf Pro.
-    #
-    # @param displayName [String] The name of the extension
-    #   attribute as it appears in Title Editor
-    #
-    # @param script [String] The script of that returns
-    #   the value of the Extension Attribute on a computer.
-    #   It must be a String that starts with '#!'
-    #
-    # @return [Integer] The id of the new Extension Attribute
-    #
-    def update_extension_attribute(extensionAttributeId:, key: nil, displayName: nil, script: nil)
-      new_ea = Windu::ExtensionAttribute.create(
-        key: key,
-        displayName: displayName,
-        script: script
-      )
-      new_ea.save container_id: primary_id
-      extensionAttributes_append new_ea
-    end
-
-    # Delete an ExtensionAttribute from this SoftwareTitle
-    # by its id or key, one of which must be provided.
-    #
-    # When deleting EAs via this method, it is deleted from the
-    # server immediately, there is no need to #save
-    #
-    # @param extensionAttributeId [Integer] The id of the EA to delete
-    #
-    # @param key [String] The unique 'key' of the EA to delete
-    #
-    # @return [Integer] The id of the deleted Extension Attribute
-    #
-    def delete_extension_attribute(extensionAttributeId: nil, key: nil)
-      idx = extensionAttributes.index { |ea| ea.extensionAttributeId == extensionAttributeId || ea.key == key }
-      raise 'No matchine ExtensionAttribute in this SoftwareTitle' unless idx
-
-      ea = extensionAttributes[idx]
-      id = ea.delete
-      extensionAttributes_delete_at idx
-      id
     end
 
     # Private Instance Methods

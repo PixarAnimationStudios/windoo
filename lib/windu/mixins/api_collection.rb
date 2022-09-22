@@ -161,7 +161,7 @@ module Windu
 
         # we save 'creating' in an inst. var so we know to create
         # rather than update later on when we #save
-        @creating = init_data.delete :creating
+        @creating = true if init_data[:creating]
 
         unless fetching || from_container || @creating
           raise Windu::UnsupportedError, "#{self.class} can only be instantiated using .fetch or .create, not .new"
@@ -236,7 +236,7 @@ module Windu
         new_id = handle_create_response(resp, container_id: container_id)
 
         # no longer creating, future saves are updates
-        @creating = nil
+        remove_instance_variable :@creating
 
         new_id
       end

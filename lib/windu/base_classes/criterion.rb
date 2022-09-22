@@ -68,6 +68,42 @@ module Windu
 
       TYPES = [TYPE_RECON, TYPE_EA].freeze
 
+      # Class Methods
+      ######################
+
+      # @return [Array<String>] The names of all available recon criteria names
+      #####
+      def self.available_names
+        Windu.cnx.get 'valuelists/criteria/names'
+      end
+
+      # @return [Array<String>] The possible criteria types
+      #####
+      def self.available_types
+        Windu.cnx.get 'valuelists/criteria/types'
+      end
+
+      # Find out the available critrion operators for a given criterion.
+      # e.g. for the criterion 'Application Title' the operators are:
+      #    ["is", "is not", "has", "does not have"]
+      #
+      # for the criterion 'Application Bundle ID' the operators are:
+      #    ["is", "is not", "like", "not like", "matches regex", "does not match regex"]
+      #
+      # for the criterion 'Computer Group' the operators are:
+      #    ["member of", "not member of"]
+      #
+      # ...and so on.
+      #
+      # @param name [String] The criterion for which to get the operators
+      #
+      # @return [Array<String>] The possible operators for a given criterion name
+      #
+      #####
+      def self.operators_for(name)
+        Windu.cnx.post 'valuelists/criteria/operators', { name: name }
+      end
+
       # Attributes
       ######################
 
@@ -79,12 +115,14 @@ module Windu
         #   of this requirement in the #requirements attribute of the SoftwareTitle
         #   instance that uses this requirement
         absoluteOrderId: {
-          class: :Integer
+          class: :Integer,
+          readonly: true
         },
 
         # @!attribute and_or
         # @return [Symbol] Either :and or :or. This indicates how this criterion is
-        #   joined to the next in a chain of boolean logic.
+        #   joined to the previous one in a chain of boolean logic.
+        #
         #   NOTE: In the Title Editor JSON data, this key for this value is the
         #   word "and" and its value is a boolean: if false, the joiner is "or".
         #   However, because "and" is a reserved word in ruby, we convert that
@@ -98,14 +136,16 @@ module Windu
         # @return [String] The name of the criteria to search in this requirement.
         #    See the API resource GET 'valuelists/criteria/names'
         name: {
-          class: :String
+          class: :String,
+          required: true
         },
 
         # @!attribute operator
         # @return [String] The criteria operator to apply to the criteria name
         #    See the API resource POST 'valuelists/criteria/names',  {name: 'Criteria Name'}
         operator: {
-          class: :String
+          class: :String,
+          required: true
         },
 
         # @!attribute value
@@ -118,7 +158,8 @@ module Windu
         # @return [String] What type of criteria is the named one?
         #   Must be one of the values in TYPES
         type: {
-          class: :String
+          class: :String,
+          required: true
         }
       }.freeze
 
@@ -126,7 +167,15 @@ module Windu
       ######################
       def initialize(json_data)
         super
-        @and_or = @init_data[:and] == false ? :or : :and
+        @and_or ||= @init_data[:and] == false ? :or : :and
+      end
+
+      # handle @and_or before saving
+      def to_api
+        api_data = super
+        api_data[:and] = (@and_or == :and)
+        api_data.delete :and_or
+        api_data
       end
 
     end # class Criterion

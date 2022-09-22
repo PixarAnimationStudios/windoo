@@ -51,13 +51,15 @@ module Windu
       # @return [Integer] The id number of this requirement in the Title Editor
       requirementId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        readonly: true
       },
 
       # @!attribute softwareTitleId
       # @return [Integer] The id number of the title which uses this requirement
       softwareTitleId: {
-        class: :Integer
+        class: :Integer,
+        readonly: true
       }
 
     }.freeze
@@ -68,6 +70,26 @@ module Windu
     ####
     def self.fetch(*_args)
       raise Windu::UnsupportedError, 'Requirements are fetched as part of the SoftwareTitle that contains them'
+    end
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response, container_id: nil)
+      @requirementId = post_response[:requirementId]
+      @softwareTitleId = container_id
+
+      @requirementId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(put_response)
+      @and_or ||= put_response[:and] == false ? :or : :and
+      @requirementId
     end
 
   end # class Requirement

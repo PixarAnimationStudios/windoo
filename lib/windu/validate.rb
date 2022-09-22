@@ -80,6 +80,11 @@ module Windu
         when :Hash
           hash val, attr_name: attr_name
 
+        when :Symbol
+          symbol val, attr_name: attr_name
+
+        else
+          val
         end # case
 
       # Now that the val is in whatever correct format after the above tests,
@@ -261,6 +266,21 @@ module Windu
       return val if val.is_a? Hash
 
       raise_invalid_data_error(msg || "#{attr_name} value must be a Hash")
+    end
+
+    # Confirm that a value is a Symbol, or can be coerced into one
+    # Return the Symbol, or raise an error
+    #
+    # @param val [#to_sym] the value to validate
+    #
+    # @param msg [String] A custom error message when the value is invalid
+    #
+    # @return [Symbol]
+    #
+    def self.symbol(val, attr_name: nil, msg: nil)
+      return val.to_sym if val.respond_to? :to_sym
+
+      raise_invalid_data_error(msg || "#{attr_name} value must be a Symbol")
     end
 
     # Confirm that a value is a String
