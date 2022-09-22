@@ -41,6 +41,8 @@ module Windu
 
     RSRC_PATH = 'softwaretitles'
 
+    CONTAINER_CLASS = nil
+
     # when creating or updating this object itself, only these attributes are sent.
     # Sub-objects are saved or updated via #create_x methods (e.g. create_patch)
     # or by calling save on existing objects inside this SoftwareTitle,
@@ -92,10 +94,17 @@ module Windu
       Windu.cnx.get(self::RSRC_PATH)
     end
 
+    # Override the method from APICollection, because
+    # SoftwareTitles can be looked up by both the primary_ident
+    # (softwareTitleId) and secondary (id)
+    #
     # @return [Windu::SoftwareTitle]
     ####
     def self.fetch(ident = nil, **key_and_ident)
-      raise ArgumentError, "ident, or 'key: ident' is required to fetch" unless ident || !key_and_ident.empty?
+      unless ident || !key_and_ident.empty?
+        raise ArgumentError,
+              "ident, or 'key: ident' is required to fetch #{self.class}"
+      end
 
       id =
         if ident
@@ -109,7 +118,9 @@ module Windu
           key == primary_ident_key ? ident : valid_id(ident, key: key, raise_if_not_found: true)
         end
 
-      new Windu.cnx.get("#{self::RSRC_PATH}/#{id}")
+      init_data = Windu.cnx.get("#{self::RSRC_PATH}/#{id}")
+      init_data[:fetching] = true
+      new init_data
     end
 
     # @param ident [Integer, String] the identifier value to search for
@@ -146,8 +157,11 @@ module Windu
     private_class_method :find_summary_for_ident
 
     # Get the 'autofill patches' for a given software title
+    #
     # @param ident [String, Integer] An identifier for a software title
+    #
     # @return [Array<Hash>] the autofill patch data
+    ####
     def self.autofill_patches(ident)
       id = valid_id ident, raise_if_not_found: true
 
@@ -155,8 +169,11 @@ module Windu
     end
 
     # Get the 'autofill requirements' for a given software title
+    #
     # @param ident [String, Integer] An identifier for a software title
+    #
     # @return [Array<Hash>] the autofill requirement data
+    ####
     def self.autofill_requirements(ident)
       id = valid_id ident, raise_if_not_found: true
 
@@ -284,12 +301,12 @@ module Windu
 
     # Construcor
     ######################
-    def initialize(_json_data)
+    def initialize(_init_data)
       super
-      @requirements = requirements.map { |data| Windu::Requirement.new data }
-      @patches = patches.map { |data| Windu::Patch.new data }
+      @requirements = requirements.map { |data| Windu::Requirement.instantiate_from_container data }
+      @patches = patches.map { |data| Windu::Patch.instantiate_from_container data }
       @extensionAttributes = extensionAttributes.map do |data|
-        Windu::ExtensionAttribute.new data
+        Windu::ExtensionAttribute.instantiate_from_container data
       end
     end
 
@@ -310,6 +327,178 @@ module Windu
       self.class.autofill_requirements id
     end
 
+    # Add an ExtensionAttribute to this SoftwareTitle.
+    #
+    # When adding the EA via this method, it is added
+    # immediately to the server, there is no need to #save.
+    #
+    # @param key [String] The name of the extension attribute as
+    #   it appears in Jamf Pro
+    #   NOTE: must be unique in the Title Editor AND Jamf Pro.
+    #
+    # @param displayName [String] The name of the extension
+    #   attribute as it appears in Title Editor
+    #
+    # @param script [String] The script of that returns
+    #   the value of the Extension Attribute on a computer.
+    #   It must be a String that starts with '#!'
+    #
+    # @return [Integer] The id of the new Extension Attribute
+    #
+    def add_extension_attribute(key:, displayName:, script:)
+      new_ea = Windu::ExtensionAttribute.create(
+        key: key,
+        displayName: displayName,
+        script: script
+      )
+      new_ea.save container_id: primary_id
+      extensionAttributes_append new_ea
+    end
+
+    # Update an ExtensionAttribute an this SoftwareTitle.
+    #
+    # When updating the EA via this method, it is added
+    # immediately to the server, there is no need to #save.
+    #
+    # @param key [String] The name of the extension attribute as
+    #   it appears in Jamf Pro
+    #   NOTE: must be unique in the Title Editor AND Jamf Pro.
+    #
+    # @param displayName [String] The name of the extension
+    #   attribute as it appears in Title Editor
+    #
+    # @param script [String] The script of that returns
+    #   the value of the Extension Attribute on a computer.
+    #   It must be a String that starts with '#!'
+    #
+    # @return [Integer] The id of the new Extension Attribute
+    #
+    def update_extension_attribute(extensionAttributeId:, key: nil, displayName: nil, script: nil)
+      new_ea = Windu::ExtensionAttribute.create(
+        key: key,
+        displayName: displayName,
+        script: script
+      )
+      new_ea.save container_id: primary_id
+      extensionAttributes_append new_ea
+    end
+
+    # Delete an ExtensionAttribute from this SoftwareTitle
+    # by its id or key, one of which must be provided.
+    #
+    # When deleting EAs via this method, it is deleted from the
+    # server immediately, there is no need to #save
+    #
+    # @param extensionAttributeId [Integer] The id of the EA to delete
+    #
+    # @param key [String] The unique 'key' of the EA to delete
+    #
+    # @return [Integer] The id of the deleted Extension Attribute
+    #
+    def delete_extension_attribute(extensionAttributeId: nil, key: nil)
+      idx = extensionAttributes.index { |ea| ea.extensionAttributeId == extensionAttributeId || ea.key == key }
+      raise 'No matchine ExtensionAttribute in this SoftwareTitle' unless idx
+
+      ea = extensionAttributes[idx]
+      id = ea.delete
+      extensionAttributes_delete_at idx
+      id
+    end
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response)
+      @softwareTitleId = post_response[:softwareTitleId]
+
+      @lastModified = Time.parse(post_response[:lastModified]).localtime
+      @sourceId = post_response[:sourceId]
+      @enabled = post_response[:enabled]
+
+      @softwareTitleId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(put_response)
+      @lastModified = Time.parse(put_response[:lastModified]).localtime
+      @softwareTitleId
+    end
+
   end # class SoftwareTitle
 
 end # Module Windu
+
+# # Update/PUT
+# {
+#   "enabled": true,
+#   "name": 'My Title',
+#   "publisher": 'Publisher',
+#   "appName": 'My Application.app',
+#   "bundleId": 'com.example.myapp',
+#   "lastModified": '2020-01-01T00:00:00.000Z',
+#   "currentVersion": '1.0',
+#   "id": 'MyTitle'
+# }
+
+# # Create/POST
+# {
+#   "sourceId": 0,
+#   "enabled": true,
+#   "name": 'My Title',
+#   "publisher": 'Publisher',
+#   "appName": 'My Application.app',
+#   "bundleId": 'com.example.myapp',
+#   "lastModified": '2020-01-01T00:00:00.000Z',
+#   "currentVersion": '1.0',
+#   "requirements": {
+#     "absoluteOrderId": 0,
+#     "and": true,
+#     "name": 'Application Bundle ID',
+#     "operator": 'is',
+#     "value": 'com.example.myapp',
+#     "type": 'recon'
+#   },
+#   "patches": {
+#     "absoluteOrderId": 0,
+#     "enabled": true,
+#     "version": '1.0',
+#     "releaseDate": '2020-01-01T00:00:00.000Z',
+#     "standalone": true,
+#     "minimumOperatingSystem": '10.12',
+#     "reboot": false,
+#     "killApps": {
+#       "bundleId": 'com.example.myapp',
+#       "appName": 'My Application.app'
+#     },
+#     "components": {
+#       "name": 'Component Name',
+#       "version": '1.0',
+#       "criteria": {
+#         "absoluteOrderId": 0,
+#         "and": true,
+#         "name": 'Application Bundle ID',
+#         "operator": 'is',
+#         "value": 'com.example.myapp',
+#         "type": 'recon'
+#       }
+#     },
+#     "capabilities": {
+#       "absoluteOrderId": 0,
+#       "and": true,
+#       "name": 'Application Bundle ID',
+#       "operator": 'is',
+#       "value": '10.12',
+#       "type": 'recon'
+#     }
+#   },
+#   "extensionAttributes": {
+#     "key": 'my-app-version',
+#     "value": 'IyEvYmluL3NoCgplY2hvICI8cmVzdWx0PjIuMDwvcmVzdWx0PiIKCmV4aXQgMA==',
+#     "displayName": 'My App Version'
+#   },
+#   "id": 'MyTitle'
+# }

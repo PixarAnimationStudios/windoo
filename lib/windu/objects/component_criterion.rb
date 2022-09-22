@@ -26,7 +26,7 @@
 module Windu
 
   # The class for dealing with the criteria of Patch Components
-  class ComponentCriterion < Windu::BaseClasses::JSONObject
+  class ComponentCriterion < Windu::BaseClasses::Criterion
 
     # Attributes
     ######################

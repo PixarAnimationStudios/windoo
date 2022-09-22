@@ -30,7 +30,7 @@ module Windu
   #
   # A requirement is one criterion, a group of which define which computers
   # have the title installed, regardless of version.
-  class Requirement < Windu::BaseClasses::JSONObject
+  class Requirement < Windu::BaseClasses::Criterion
 
     # Mixins
     ######################

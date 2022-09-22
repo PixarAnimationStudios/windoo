@@ -38,6 +38,8 @@ module Windu
 
     RSRC_PATH = 'extensionattributes'
 
+    CONTAINER_CLASS = Windu::SoftwareTitle
+
     # Attributes
     ######################
 
@@ -58,13 +60,15 @@ module Windu
 
       # @!attribute key
       # @return [String] The name of the extension attribute as it appears in Jamf Pro
-      #    NOTE: must be unique in Jamf Pro.
+      #    NOTE: must be unique in the Title Editor AND Jamf Pro.
       key: {
-        class: :String
+        class: :String,
+        required: true,
+        identifier: true
       },
 
       # @!attribute value
-      # @return [String] The Base64 encoded script code for this extension attribute
+      # @return [String] The Base64 encoded script for this extension attribute
       value: {
         class: :String
       },
@@ -72,20 +76,58 @@ module Windu
       # @!attribute displayName
       # @return [String] The name of the extension attribute as it appears in Title Editor
       displayName: {
-        class: :String
+        class: :String,
+        required: true
       }
 
     }.freeze
+
+    # Construcor
+    ######################
+    def initialize(init_data)
+      super
+      self.script = @init_data[:script] if @init_data[:script]
+    end
 
     # Public Instance Methods
     ######################
 
     # @return [String] The script code for this extension attribute
     def script
+      return if value.to_s.empty?
+
       require 'base64'
       Base64.decode64 value
     end
 
-  end
+    # @param code [String] The script code for this extension attribute
+    # @return [void]
+    def script=(code)
+      raise ArgumentError, 'Code must be a string starting with #!' unless code.to_s.start_with?('#!')
+
+      require 'base64'
+      self.value = Base64.encode64(code)
+    end
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response, container_id: nil)
+      @extensionAttributeId = post_response[:extensionAttributeId]
+      @softwareTitleId = container_id
+
+      @extensionAttributeId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(_put_response)
+      @extensionAttributeId
+    end
+
+  end # class ExtensionAttribute
 
 end # module Windu

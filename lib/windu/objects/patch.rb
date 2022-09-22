@@ -134,9 +134,9 @@ module Windu
 
     def initialize(json_data)
       super
-      @killApps = killApps.map { |data| Windu::KillApp.new data }
-      @components = components.map { |data| Windu::Component.new data }
-      @capabilities = capabilities.map { |data| Windu::Capability.new data }
+      @killApps = killApps.map { |data| Windu::KillApp.instantiate_from_container data }
+      @components = components.map { |data| Windu::Component.instantiate_from_container data }
+      @capabilities = capabilities.map { |data| Windu::Capability.instantiate_from_container data }
     end
 
   end # class Patch

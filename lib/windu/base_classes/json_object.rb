@@ -398,10 +398,10 @@ module Windu
 
       # Constructor
       ######################
-      def initialize(json_data)
-        @init_data = json_data
+      def initialize(**init_data)
+        @init_data = init_data
         @init_data.each do |key, val|
-          next unless respond_to?(key) || respond_to?("#{key}=")
+          next unless self.class.json_attributes.key? key
 
           ruby_val =
             if self.class.json_attributes[key][:to_ruby]
@@ -417,23 +417,29 @@ module Windu
       # Public Instance Methods
       #####################
 
+      # @return [Hash] Any changes that have not been saved to the server yet
+      attr_reader :unsaved_changes
+
       # @return [Hash] The data to be sent to the API, as a Hash
       #  to be converted to JSON before sending to the JPAPI
       #
       def to_api
         api_data = {}
-        attrs_for_save =
-          if defined?(self.class::ATTRIBUTES_FOR_SAVE)
-            self.class::ATTRIBUTES_FOR_SAVE
-          else
-            self.class.json_attributes.keys
-          end
+        attrs_for_save = self.class.json_attributes.keys
+        # if defined?(self.class::ATTRIBUTES_FOR_SAVE)
+        #   self.class::ATTRIBUTES_FOR_SAVE
+        # else
+        #   self.class.json_attributes.keys
+        # end
 
         attrs_for_save.each do |attr_name|
           attr_def = self.class.json_attributes[attr_name]
           raw_value = instance_variable_get "@#{attr_name}"
+
           api_data[attr_name] =
-            if attr_def[:multi]
+            if raw_value.nil?
+              nil
+            elsif attr_def[:multi]
               multi_to_api(raw_value, attr_def)
             else
               single_to_api(raw_value, attr_def)
@@ -455,7 +461,7 @@ module Windu
       # @return [Array] the desired instance_variables
       #
       def pretty_print_instance_variables
-        @pretty_print_instance_variables ||= instance_variables - PP_OMITTED_INST_VARS
+        instance_variables - PP_OMITTED_INST_VARS
       end
 
       # Private Instance Methods
