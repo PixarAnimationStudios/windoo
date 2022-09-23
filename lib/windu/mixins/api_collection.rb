@@ -173,6 +173,19 @@ module Windu
       # Public Instance Methods
       ####################
 
+      # @return [APICollection] The object that contains this object, or nil
+      #   if nothing contains this object
+      # def container
+      #   return @container if defined? @container
+
+      #   @container =
+      #     if defined? self.class::CONTAINER_CLASS
+      #       container_id_key = self.class::CONTAINER_CLASS.primary_ident_key
+      #       container_id = send container_id_key
+      #       self.class::CONTAINER_CLASS.fetch container_id
+      #     end
+      # end
+
       # @return [nil, Integer] our primary identifier value, regardless of its
       #   attribute name. Before creation, this is nil. After deletion, this is -1
       #
@@ -211,7 +224,7 @@ module Windu
       def delete
         self.class.delete primary_id
         @deleted_id = primary_id
-        send "#{self.class.primary_ident_key}=", -1
+        instance_variable_set "@#{self.class.primary_ident_key}", -1
         @deleted_id
       end
 

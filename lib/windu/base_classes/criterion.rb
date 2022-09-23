@@ -68,42 +68,6 @@ module Windu
 
       TYPES = [TYPE_RECON, TYPE_EA].freeze
 
-      # Class Methods
-      ######################
-
-      # @return [Array<String>] The names of all available recon criteria names
-      #####
-      def self.available_names
-        Windu.cnx.get 'valuelists/criteria/names'
-      end
-
-      # @return [Array<String>] The possible criteria types
-      #####
-      def self.available_types
-        Windu.cnx.get 'valuelists/criteria/types'
-      end
-
-      # Find out the available critrion operators for a given criterion.
-      # e.g. for the criterion 'Application Title' the operators are:
-      #    ["is", "is not", "has", "does not have"]
-      #
-      # for the criterion 'Application Bundle ID' the operators are:
-      #    ["is", "is not", "like", "not like", "matches regex", "does not match regex"]
-      #
-      # for the criterion 'Computer Group' the operators are:
-      #    ["member of", "not member of"]
-      #
-      # ...and so on.
-      #
-      # @param name [String] The criterion for which to get the operators
-      #
-      # @return [Array<String>] The possible operators for a given criterion name
-      #
-      #####
-      def self.operators_for(name)
-        Windu.cnx.post 'valuelists/criteria/operators', { name: name }
-      end
-
       # Attributes
       ######################
 

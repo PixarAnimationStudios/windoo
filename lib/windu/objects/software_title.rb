@@ -237,7 +237,14 @@ module Windu
       },
 
       # @!attribute lastModified
-      #   @return [Time]  When was the title last modified?
+      #   @return [Time]  When was the title last modified, in UTC?
+      #     @note This timestamp is only valid as of the last time
+      #       you fetched this SoftwareTitle or updated one of its
+      #       immediate attributes (i.e. not arrays of other API
+      #       objects like requirements or patches.)
+      #       To be sure of the most recent time, accounting for
+      #       potential updates from other places (like the Web UI)
+      #       you should re-fetch the Title
       lastModified: {
         class: Time,
 
@@ -285,8 +292,7 @@ module Windu
       #   @return [Array<Windu::Requirement>] The requirements - criteria that
       #     define which computers have the software installed.
       requirements: {
-        class: Windu::Requirement,
-        multi: true
+        class: Windu::RequirementManager
       },
 
       # @!attribute patches
@@ -311,11 +317,9 @@ module Windu
     ######################
     def initialize(_init_data)
       super
-      @requirements = requirements.map { |data| Windu::Requirement.instantiate_from_container data }
-      @patches = patches.map { |data| Windu::Patch.instantiate_from_container data }
-      @extensionAttributes = extensionAttributes.map do |data|
-        Windu::ExtensionAttribute.instantiate_from_container data
-      end
+      @requirements = Windu::RequirementManager.new @requirements, container: self, softwareTitle: self
+      @patches.map! { |data| Windu::Patch.instantiate_from_container data }
+      @extensionAttributes.map! { |data| Windu::ExtensionAttribute.instantiate_from_container data }
     end
 
     # Public Instance Methods

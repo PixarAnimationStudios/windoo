@@ -42,6 +42,8 @@ module Windu
 
     RSRC_PATH = 'requirements'
 
+    CONTAINER_CLASS = Windu::SoftwareTitle
+
     # Attributes
     ######################
 
@@ -72,6 +74,14 @@ module Windu
       raise Windu::UnsupportedError, 'Requirements are fetched as part of the SoftwareTitle that contains them'
     end
 
+    # Constructor
+    ######################
+
+    def initialize(json_data, softwareTitle: nil)
+      @container = softwareTitle
+      super json_data
+    end
+
     # Private Instance Methods
     ##########################################
     private
@@ -80,6 +90,7 @@ module Windu
     # in the APICollection mixin.
     def handle_create_response(post_response, container_id: nil)
       @requirementId = post_response[:requirementId]
+      @absoluteOrderId = post_response[:absoluteOrderId]
       @softwareTitleId = container_id
 
       @requirementId
@@ -89,6 +100,8 @@ module Windu
     # in the APICollection mixin.
     def handle_update_response(put_response)
       @and_or ||= put_response[:and] == false ? :or : :and
+      @absoluteOrderId = post_response[:absoluteOrderId]
+
       @requirementId
     end
 

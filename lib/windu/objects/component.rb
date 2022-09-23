@@ -54,8 +54,8 @@ module Windu
         class: :Integer
       },
 
+      # @!attribute name
       # @return [String] The name of the Software Title for this patch
-      # @return [String] The id number of the patch which uses this component
       name: {
         class: :String
       },

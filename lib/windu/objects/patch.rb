@@ -36,6 +36,8 @@ module Windu
 
     RSRC_PATH = 'patches'
 
+    CONTAINER_CLASS = Windu::SoftwareTitle
+
     # Attributes
     ######################
 
@@ -60,7 +62,8 @@ module Windu
       #   of this patch in the #patches attribute of the SoftwareTitle
       #   instance that uses this patch
       absoluteOrderId: {
-        class: :Integer
+        class: :Integer,
+        readonly: true
       },
 
       # @!attribute enabled
@@ -72,13 +75,16 @@ module Windu
       # @!attribute version
       # @return [String] The version on the title installed by this patch
       version: {
-        class: :String
+        class: :String,
+        required: true
       },
 
       # @!attribute releaseDate
       # @return [Time] When this patch was released
       releaseDate: {
-        class: :Time
+        class: :Time,
+        to_ruby: :parse,
+        to_api: :iso8601
       },
 
       # @!attribute standalone
@@ -120,11 +126,10 @@ module Windu
       },
 
       # @!attribute capabilities
-      # @return [Array<Windu::Capability>] The criteria which identify
+      # @return [Array<Windu::CapabilityManager>] The criteria which identify
       #   computers capable of running, and thus installing, this patch.
       capabilities: {
-        class: Windu::Capability,
-        multi: true
+        class: Windu::CapabilityManager
       }
 
     }.freeze
@@ -134,9 +139,34 @@ module Windu
 
     def initialize(json_data)
       super
-      @killApps = killApps.map { |data| Windu::KillApp.instantiate_from_container data }
-      @components = components.map { |data| Windu::Component.instantiate_from_container data }
-      @capabilities = capabilities.map { |data| Windu::Capability.instantiate_from_container data }
+
+      @killApps.map! { |data| Windu::KillApp.instantiate_from_container data }
+      @components.map! { |data| Windu::Component.instantiate_from_container data }
+      @capabilities = Windu::CapabilityManager.new @capabilities, container: self, softwareTitle: container
+    end
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response, container_id: nil)
+      @patchId = post_response[:patchId]
+      @absoluteOrderId = post_response[:absoluteOrderId]
+
+      @softwareTitleId = container_id
+
+      @patchId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(put_response)
+      @and_or ||= put_response[:and] == false ? :or : :and
+      @absoluteOrderId = post_response[:absoluteOrderId]
+
+      @requirementId
     end
 
   end # class Patch
