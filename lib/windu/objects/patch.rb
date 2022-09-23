@@ -47,13 +47,15 @@ module Windu
       # @return [Integer] The id number of this patch
       patchId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        do_not_send: true
       },
 
       # @!attribute softwareTitleId
       # @return [Integer] The id number of the title which uses this patch
       softwareTitleId: {
-        class: :Integer
+        class: :Integer,
+        do_not_send: true
       },
 
       # @!attribute absoluteOrderId
@@ -63,7 +65,8 @@ module Windu
       #   instance that uses this patch
       absoluteOrderId: {
         class: :Integer,
-        readonly: true
+        readonly: true,
+        do_not_send: true
       },
 
       # @!attribute enabled
@@ -82,7 +85,7 @@ module Windu
       # @!attribute releaseDate
       # @return [Time] When this patch was released
       releaseDate: {
-        class: :Time,
+        class: Time,
         to_ruby: :parse,
         to_api: :iso8601
       },
@@ -100,7 +103,8 @@ module Windu
       #   NOTE: This is for reporting only. If there is a minimumOperatingSystem
       #   You'll still need to specify it in the capabilities for this patch.
       minimumOperatingSystem: {
-        class: :String
+        class: :String,
+        required: true
       },
 
       # @!attribute reboot
@@ -114,7 +118,8 @@ module Windu
       #   installing this patch
       killApps: {
         class: Windu::KillApp,
-        multi: true
+        multi: true,
+        do_not_send: true
       },
 
       # @!attribute components
@@ -122,14 +127,16 @@ module Windu
       #   NOTE: there can be only one!
       components: {
         class: Windu::Component,
-        multi: true
+        multi: true,
+        do_not_send: true
       },
 
       # @!attribute capabilities
       # @return [Array<Windu::CapabilityManager>] The criteria which identify
       #   computers capable of running, and thus installing, this patch.
       capabilities: {
-        class: Windu::CapabilityManager
+        class: Windu::CapabilityManager,
+        do_not_send: true
       }
 
     }.freeze
@@ -137,12 +144,98 @@ module Windu
     # Constructor
     ######################
 
-    def initialize(json_data)
+    def initialize(**init_data)
       super
 
-      @killApps.map! { |data| Windu::KillApp.instantiate_from_container data }
-      @components.map! { |data| Windu::Component.instantiate_from_container data }
+      @killApps ||= []
+      @components ||= []
+      @capabilities ||= []
+
+      @killApps.map! { |data| Windu::KillApp.instantiate_from_container container: self, **data }
+      @components.map! { |data| Windu::Component.instantiate_from_container container: self, **data }
       @capabilities = Windu::CapabilityManager.new @capabilities, container: self, softwareTitle: container
+    end
+
+    # Public Instance Methods
+    ##########################################
+
+    # Add a killApp to this patch
+    #
+    # A killApp idetifies apps that cannot be running while this patch
+    # is installed. If the user is voluntarily applying the patch, they
+    # will be asked to quit the killApp. If the patch is being applied
+    # automatically, it will be killed automatically.
+    #
+    # @param appName [String] The name of the application that
+    #   cannot be running to install this patch. e.g. Safari.app
+    #
+    # @param bundleId [String] The bundle id of the application
+    #   that cannot be running to install this patch,
+    #   e.g. com.apple.Safari
+    #
+    # @return [Integer] The id of the new killApp
+    #
+    def add_killApp(appName:, bundleId:)
+      new_ka = Windu::KillApp.create(
+        appName: appName,
+        bundleId: bundleId
+      )
+
+      new_id = new_ka.save container_id: @patchId
+
+      @killApps << new_ka
+
+      new_id
+    end
+
+    # Update the details of an existing killApp
+    #
+    # You must provide either the Array index of the desired killApp
+    # from the array, or the killAppId of one of them.
+    #
+    # Values not set in the params are left unchanged
+    #
+    # @param index [Integer] The array index of the desired killApp in the array
+    #   Must be provided if not providing id.
+    #
+    # @param id [Integer] The killAppId of the desired killApp in the array
+    #   Must be provided if not providing an index
+    #
+    # @param appName [String] The new name of the application that
+    #   cannot be running to install this patch. e.g. Safari.app
+    #
+    # @param bundleId [String] The new bundle id of the application
+    #   that cannot be running to install this patch,
+    #   e.g. com.apple.Safari
+    #
+    # @return [Integer] The id of the updated killApp
+    #
+    def update_killApp(index: nil, id: nil, bundleId: nil, appName: nil)
+      ka = killApp_by_index_or_id(index: index, id: id)
+
+      ka.bundleId = bundleId if bundleId
+      ka.operator = appName if appName
+
+      ka.save
+    end
+
+    # Delete a killApp by its index or its id
+    #
+    # @param index [Integer] The array index of the desired killApp in the array
+    #   Must be provided if not providing id.
+    #
+    # @param id [Integer] The killAppId of the desired killApp in the array
+    #   Must be provided if not providing an index
+    #
+    # @return [Integer] The id of the deleted killApp
+    #
+    def delete_killApp(index: nil, id: nil)
+      return if @killApps.empty?
+
+      ka = killApp_by_index_or_id(index: index, id: id)
+
+      @killApps.delete_if { |k| k == ka }
+      ka.delete
     end
 
     # Private Instance Methods
@@ -163,10 +256,22 @@ module Windu
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
     def handle_update_response(put_response)
-      @and_or ||= put_response[:and] == false ? :or : :and
-      @absoluteOrderId = post_response[:absoluteOrderId]
+      @absoluteOrderId = put_response[:absoluteOrderId]
 
-      @requirementId
+      @patchId
+    end
+
+    def killApp_by_index_or_id(index: nil, id: nil)
+      if index
+        ka = @killApps[index]
+      elsif id
+        ka = @killApps.find { |k| k.killAppId == id }
+      else
+        raise ArgumentError, 'Either index: or id: must be provided to locate the desired killApp'
+      end
+      raise Windu::NoSuchItemError, 'No matching killApp found' unless ka
+
+      ka
     end
 
   end # class Patch

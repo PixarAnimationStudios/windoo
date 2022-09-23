@@ -93,7 +93,7 @@ module Windu
 
     # Construcor
     ######################
-    def initialize(init_data)
+    def initialize(**init_data)
       super
       self.script = @init_data[:script] if @init_data[:script]
     end

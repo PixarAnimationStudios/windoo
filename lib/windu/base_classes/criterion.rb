@@ -129,7 +129,7 @@ module Windu
 
       # Constructor
       ######################
-      def initialize(json_data)
+      def initialize(**init_data)
         super
         @and_or ||= @init_data[:and] == false ? :or : :and
       end

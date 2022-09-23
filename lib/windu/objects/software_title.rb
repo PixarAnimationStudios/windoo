@@ -45,24 +45,6 @@ module Windu
 
     CONTAINER_CLASS = nil
 
-    # when creating or updating this object itself, only these attributes are sent.
-    # Sub-objects are saved or updated via #create_x methods (e.g. create_patch)
-    # or by calling save on existing objects inside this SoftwareTitle,
-    # (e.g. #patches[3].save)
-    # NOTE: the docs also mention that this data for create and update has
-    # keys 'appName' and 'bundleId'  but those keys don't show up in the
-    # web UI and are always nil in the API data.
-    #
-    # TODO: If this is even needed, use the JSON_ATTRIBUTES to identify them.
-    ATTRIBUTES_FOR_SAVE = %i[
-      id
-      name
-      publisher
-      enabled
-      lastModified
-      currentVersion
-    ].freeze
-
     # Public Class Methods
     ######################
 
@@ -116,15 +98,15 @@ module Windu
         else
           key, ident = key_and_ident.first
 
-          # Dont call valid_id if we are fetching based on the primary_ident_key
+          # Dont call valid_id if we are fetching based on the primary_id_key
           # just used the value provided. The API will complain if it
           # doesn't exist
-          key == primary_ident_key ? ident : valid_id(ident, key: key, raise_if_not_found: true)
+          key == primary_id_key ? ident : valid_id(ident, key: key, raise_if_not_found: true)
         end
 
       init_data = Windu.cnx.get("#{self::RSRC_PATH}/#{id}")
       init_data[:fetching] = true
-      new init_data
+      new(**init_data)
     end
 
     # @param ident [Integer, String] the identifier value to search for
@@ -142,7 +124,7 @@ module Windu
           find_summary_for_ident(ident)
         end
 
-      value = matched_summary ? matched_summary[primary_ident_key] : nil
+      value = matched_summary ? matched_summary[primary_id_key] : nil
 
       raise Windu::NoSuchItemError, "No #{self} found for identifier '#{ident}'" if raise_if_not_found && value.nil?
 
@@ -190,13 +172,15 @@ module Windu
     # Attributes not defined in the superclasses
 
     JSON_ATTRIBUTES = {
+
       # @!attribute softwareTitleId
       #   @return [Integer] The id of this title in the Title Editor
       softwareTitleId: {
         class: :Integer,
         # primary means this is the one used to fetch via API calls
         identifier: :primary,
-        readonly: true
+        readonly: true,
+        do_not_send: true
       },
 
       # @!attribute id
@@ -236,6 +220,22 @@ module Windu
         required: true
       },
 
+      # @attribute appName
+      #   @return [String] Currently not used by the Title Editor.
+      #      the value is alwways nil, and there is no matching
+      #      data in the Web UI
+      # appName: {
+      #   class: :String
+      # },
+
+      # @attribute bundleId
+      #   @return [String] Currently not used by the Title Editor.
+      #      the value is alwways nil, and there is no matching
+      #      data in the Web UI
+      # bundleId: {
+      #   class: :String
+      # },
+
       # @!attribute lastModified
       #   @return [Time]  When was the title last modified, in UTC?
       #     @note This timestamp is only valid as of the last time
@@ -259,7 +259,11 @@ module Windu
         # The method to call on the value when converting to
         # data to be sent to the API.
         # e.g. on Time values, convert to iso8601
-        to_api: :iso8601
+        # to_api: :iso8601
+
+        # attributes with this set to true are never
+        # sent to the server when creating or updating
+        do_not_send: true
       },
 
       # @!attribute currentVersion
@@ -276,6 +280,8 @@ module Windu
       # _return [String] The name of the Patch Source that ultimately
       #   hosts this title definition. If hosted by our TitleEditor
       #   directly, this is LOCAL_TITLE_EDITOR_SOURCE_NAME
+      #
+      #   @todo implement external patches.
       # source: {
       #   class: :String
       # },
@@ -284,22 +290,27 @@ module Windu
       # @return [Integer] The id of the Patch Source that ultimately
       #   hosts this title definition. If hosted by our TitleEditor
       #   directly, this is LOCAL_TITLE_EDITOR_SOURCE_ID
-      sourceId: {
-        class: :Integer
-      },
+      #
+      #   @todo implement external patches.
+      # sourceId: {
+      #   class: :Integer,
+      #   do_not_send: true
+      # },
 
       # @!attribute requirements
       #   @return [Array<Windu::Requirement>] The requirements - criteria that
       #     define which computers have the software installed.
       requirements: {
-        class: Windu::RequirementManager
+        class: Windu::RequirementManager,
+        do_not_send: true
       },
 
       # @!attribute patches
       #   @return [Array<Windu::Patch>] The patches available for this title
       patches: {
         class: Windu::Patch,
-        multi: true
+        multi: true,
+        do_not_send: true
       },
 
       # @!attribute extensionAttributes
@@ -309,17 +320,23 @@ module Windu
       #     #add_extensionAttribute, #update_extensionAttribute, #delete_extensionAttribute
       extensionAttributes: {
         class: Windu::ExtensionAttribute,
-        multi: true
+        multi: true,
+        do_not_send: true
       }
     }.freeze
 
     # Construcor
     ######################
-    def initialize(_init_data)
+    def initialize(**init_data)
       super
+
+      @requirements ||= []
+      @patches ||= []
+      @extensionAttributes ||= []
+
       @requirements = Windu::RequirementManager.new @requirements, container: self, softwareTitle: self
-      @patches.map! { |data| Windu::Patch.instantiate_from_container data }
-      @extensionAttributes.map! { |data| Windu::ExtensionAttribute.instantiate_from_container data }
+      @patches.map! { |data| Windu::Patch.instantiate_from_container container: self, **data }
+      @extensionAttributes.map! { |data| Windu::ExtensionAttribute.instantiate_from_container container: self, **data }
     end
 
     # Public Instance Methods
@@ -328,14 +345,14 @@ module Windu
     # Get the 'autofill patches' for this software title
     # @return [Array<Hash>] the autofill patch data
     def autofill_patches
-      id = send self.class.primary_ident_key
+      id = send self.class.primary_id_key
       self.class.autofill_patches id
     end
 
     # Get the 'autofill requirements' for this software title
     # @return [Array<Hash>] the autofill requirement data
     def autofill_requirements
-      id = send self.class.primary_ident_key
+      id = send self.class.primary_id_key
       self.class.autofill_requirements id
     end
 
@@ -345,10 +362,10 @@ module Windu
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_create_response(post_response)
+    def handle_create_response(post_response, container_id: nil)
       @softwareTitleId = post_response[:softwareTitleId]
 
-      @lastModified = Time.parse(post_response[:lastModified]).localtime
+      @lastModified = Time.parse(post_response[:lastModified])
       @sourceId = post_response[:sourceId]
       @enabled = post_response[:enabled]
 
@@ -358,81 +375,10 @@ module Windu
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
     def handle_update_response(put_response)
-      @lastModified = Time.parse(put_response[:lastModified]).localtime
+      @lastModified = Time.parse(put_response[:lastModified])
       @softwareTitleId
     end
 
   end # class SoftwareTitle
 
 end # Module Windu
-
-# # Update/PUT
-# {
-#   "enabled": true,
-#   "name": 'My Title',
-#   "publisher": 'Publisher',
-#   "appName": 'My Application.app',
-#   "bundleId": 'com.example.myapp',
-#   "lastModified": '2020-01-01T00:00:00.000Z',
-#   "currentVersion": '1.0',
-#   "id": 'MyTitle'
-# }
-
-# # Create/POST
-# {
-#   "sourceId": 0,
-#   "enabled": true,
-#   "name": 'My Title',
-#   "publisher": 'Publisher',
-#   "appName": 'My Application.app',
-#   "bundleId": 'com.example.myapp',
-#   "lastModified": '2020-01-01T00:00:00.000Z',
-#   "currentVersion": '1.0',
-#   "requirements": {
-#     "absoluteOrderId": 0,
-#     "and": true,
-#     "name": 'Application Bundle ID',
-#     "operator": 'is',
-#     "value": 'com.example.myapp',
-#     "type": 'recon'
-#   },
-#   "patches": {
-#     "absoluteOrderId": 0,
-#     "enabled": true,
-#     "version": '1.0',
-#     "releaseDate": '2020-01-01T00:00:00.000Z',
-#     "standalone": true,
-#     "minimumOperatingSystem": '10.12',
-#     "reboot": false,
-#     "killApps": {
-#       "bundleId": 'com.example.myapp',
-#       "appName": 'My Application.app'
-#     },
-#     "components": {
-#       "name": 'Component Name',
-#       "version": '1.0',
-#       "criteria": {
-#         "absoluteOrderId": 0,
-#         "and": true,
-#         "name": 'Application Bundle ID',
-#         "operator": 'is',
-#         "value": 'com.example.myapp',
-#         "type": 'recon'
-#       }
-#     },
-#     "capabilities": {
-#       "absoluteOrderId": 0,
-#       "and": true,
-#       "name": 'Application Bundle ID',
-#       "operator": 'is',
-#       "value": '10.12',
-#       "type": 'recon'
-#     }
-#   },
-#   "extensionAttributes": {
-#     "key": 'my-app-version',
-#     "value": 'IyEvYmluL3NoCgplY2hvICI8cmVzdWx0PjIuMDwvcmVzdWx0PiIKCmV4aXQgMA==',
-#     "displayName": 'My App Version'
-#   },
-#   "id": 'MyTitle'
-# }

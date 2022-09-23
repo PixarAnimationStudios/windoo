@@ -520,6 +520,31 @@ module Windu
       raise_invalid_data_error(msg || "#{attr_name} value does not match RegExp: #{pattern}")
     end
 
+    # confirm we were given a valid container when creating
+    #
+    # @param new_object_class [Class] the class of the new object we are creating
+    #
+    # @param container [Object] The object that will contain tne new object
+    #   we are creating
+    #
+    # @return [Object, nil] The valid container for the new object
+    #
+    def self.container_for_new_object(new_object_class:, container: nil)
+      # software titles don't have containers.
+      return if new_object_class == Windu::SoftwareTitle
+
+      unless container
+        raise Windu::UnsupportedError,
+              'All new objects other than SoftwareTitle must pass in a container: object'
+      end
+
+      unless new_object_class::CONTAINER_CLASS == container.class
+        raise Windu::InvalidDataError "The container for new #{new_object_class} objects must be a #{new_object_class::CONTAINER_CLASS} object"
+      end
+
+      container
+    end
+
   end # module validate
 
 end # module Windu

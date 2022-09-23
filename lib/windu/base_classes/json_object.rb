@@ -36,7 +36,7 @@ module Windu
       ######################
 
       # When using prettyprint, don't spit out these instance variables.
-      PP_OMITTED_INST_VARS = %i[@init_data].freeze
+      PP_OMITTED_INST_VARS = %i[@init_data @container @softwareTitle].freeze
 
       # Attributes
       ######################
@@ -90,7 +90,7 @@ module Windu
         json_attributes.each do |key, deets|
           next unless deets[:identifier]
 
-          @primary_ident_key = key if deets[:identifier] == :primary
+          @primary_id_key = key if deets[:identifier] == :primary
           @ident_keys << key
         end
 
@@ -98,12 +98,12 @@ module Windu
       end
 
       # @return [Symbol] the key of the primary identifier, if there is one
-      def self.primary_ident_key
-        return @primary_ident_key if @primary_ident_key
+      def self.primary_id_key
+        return @primary_id_key if @primary_id_key
 
-        # this method sets @primary_ident_key as it loops through json_attributes
+        # this method sets @primary_id_key as it loops through json_attributes
         ident_keys
-        @primary_ident_key
+        @primary_id_key
       end
 
       # create getters and setters for subclasses of JSONObject
@@ -206,176 +206,184 @@ module Windu
       # create setter(s) for an attribute, and any aliases needed
       ##############################
       def self.create_setters(attr_name, attr_def)
-        # multi_value
-        if attr_def[:multi]
-          create_array_setters(attr_name, attr_def)
+        # readonly values don't get setters
+        #
+        # do_not_send values don't get setters because
+        # setters immediately send the data to the server
+        #
+        # multi/array values don't get setters because the
+        # array items are API objects themselves, and they have
+        # wrapper methodss that deal with them separately
+        return if attr_def[:readonly] || attr_def[:do_not_send] || attr_def[:multi]
 
-          # single value
-        else
-          Windu.load_msg "Creating setter method #{self}##{attr_name}="
-
-          define_method("#{attr_name}=") do |new_value|
-            new_value = validate_attr attr_name, new_value
-            old_value = instance_variable_get("@#{attr_name}")
-            return if new_value == old_value
-
-            instance_variable_set("@#{attr_name}", new_value)
-          end # define method
-        end
-      end # create_setters
-      private_class_method :create_setters
-
-      ##############################
-      def self.create_array_setters(attr_name, attr_def)
-        create_full_array_setters(attr_name, attr_def)
-        create_append_setters(attr_name, attr_def)
-        create_prepend_setters(attr_name, attr_def)
-        create_insert_setters(attr_name, attr_def)
-        create_delete_setters(attr_name, attr_def)
-        create_delete_at_setters(attr_name, attr_def)
-        create_delete_if_setters(attr_name, attr_def)
-      end # def create_multi_setters
-      private_class_method :create_array_setters
-
-      # The  attr=(newval) setter method for array values
-      ##############################
-      def self.create_full_array_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}="
+        Windu.load_msg "Creating setter method #{self}##{attr_name}="
 
         define_method("#{attr_name}=") do |new_value|
-          initialize_multi_value_attr_array attr_name
-
-          raise Windu::InvalidDataError, "Value for '#{attr_name}=' must be an Array" unless new_value.is_a? Array
-
-          # validate each item of the new array
-          new_value.map! { |item| validate_attr attr_name, item }
-
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_value, attr_def: attr_def, attr_name: attr_name)
-
+          new_value = validate_attr attr_name, new_value
           old_value = instance_variable_get("@#{attr_name}")
           return if new_value == old_value
 
           instance_variable_set("@#{attr_name}", new_value)
-        end # define method
 
-        return unless attr_def[:aliases]
-      end # create_full_array_setter
-      private_class_method :create_full_array_setters
+          # if this isn't a server object, we're done
+          return unless defined? self.class::RSRC_PATH
+
+          update_on_server attr_name
+        end # define method
+      end # create_setters
+      private_class_method :create_setters
+
+      ##############################
+      # def self.create_array_setters(attr_name, attr_def)
+      #   create_full_array_setters(attr_name, attr_def)
+      #   create_append_setters(attr_name, attr_def)
+      #   create_prepend_setters(attr_name, attr_def)
+      #   create_insert_setters(attr_name, attr_def)
+      #   create_delete_setters(attr_name, attr_def)
+      #   create_delete_at_setters(attr_name, attr_def)
+      #   create_delete_if_setters(attr_name, attr_def)
+      # end # def create_multi_setters
+      # private_class_method :create_array_setters
+
+      # The  attr=(newval) setter method for array values
+      # ##############################
+      # def self.create_full_array_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}="
+
+      #   define_method("#{attr_name}=") do |new_value|
+      #     initialize_multi_value_attr_array attr_name
+
+      #     raise Windu::InvalidDataError, "Value for '#{attr_name}=' must be an Array" unless new_value.is_a? Array
+
+      #     # validate each item of the new array
+      #     new_value.map! { |item| validate_attr attr_name, item }
+
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_value, attr_def: attr_def, attr_name: attr_name)
+
+      #     old_value = instance_variable_get("@#{attr_name}")
+      #     return if new_value == old_value
+
+      #     instance_variable_set("@#{attr_name}", new_value)
+      #   end # define method
+
+      #   return unless attr_def[:aliases]
+      # end # create_full_array_setter
+      # private_class_method :create_full_array_setters
 
       # The  attr_append(newval) setter method for array values
       ##############################
-      def self.create_append_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_append"
+      # def self.create_append_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_append"
 
-        define_method("#{attr_name}_append") do |new_value|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_append") do |new_value|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_value = validate_attr attr_name, new_value
+      #     new_value = validate_attr attr_name, new_value
 
-          new_array = instance_variable_get("@#{attr_name}")
-          new_array << new_value
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     new_array << new_value
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
 
-        # always have a << alias
-        alias_method "#{attr_name}<<", "#{attr_name}_append"
-      end # create_append_setters
-      private_class_method :create_append_setters
+      #   # always have a << alias
+      #   alias_method "#{attr_name}<<", "#{attr_name}_append"
+      # end # create_append_setters
+      # private_class_method :create_append_setters
 
       # The  attr_prepend(newval) setter method for array values
       ##############################
-      def self.create_prepend_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_prepend"
+      # def self.create_prepend_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_prepend"
 
-        define_method("#{attr_name}_prepend") do |new_value|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_prepend") do |new_value|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_value = validate_attr attr_name, new_value
+      #     new_value = validate_attr attr_name, new_value
 
-          new_array = instance_variable_get("@#{attr_name}")
-          new_array.unshift new_value
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     new_array.unshift new_value
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
-      end # create_prepend_setters
-      private_class_method :create_prepend_setters
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
+      # end # create_prepend_setters
+      # private_class_method :create_prepend_setters
 
       # The  attr_insert(index, newval) setter method for array values
-      def self.create_insert_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_insert"
+      # def self.create_insert_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_insert"
 
-        define_method("#{attr_name}_insert") do |index, new_value|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_insert") do |index, new_value|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_value = validate_attr attr_name, new_value
+      #     new_value = validate_attr attr_name, new_value
 
-          new_array = instance_variable_get("@#{attr_name}")
-          new_array.insert index, new_value
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     new_array.insert index, new_value
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
-      end # create_insert_setters
-      private_class_method :create_insert_setters
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
+      # end # create_insert_setters
+      # private_class_method :create_insert_setters
 
       # The  attr_delete(val) setter method for array values
       ##############################
-      def self.create_delete_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete"
+      # def self.create_delete_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete"
 
-        define_method("#{attr_name}_delete") do |val|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_delete") do |val|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_array = instance_variable_get("@#{attr_name}")
-          new_array.delete val
-          return if old_array == new_array
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     new_array.delete val
+      #     return if old_array == new_array
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
-      end # create_insert_setters
-      private_class_method :create_delete_setters
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
+      # end # create_insert_setters
+      # private_class_method :create_delete_setters
 
       # The  attr_delete_at(index) setter method for array values
       ##############################
-      def self.create_delete_at_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete_at"
+      # def self.create_delete_at_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete_at"
 
-        define_method("#{attr_name}_delete_at") do |index|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_delete_at") do |index|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_array = instance_variable_get("@#{attr_name}")
-          deleted = new_array.delete_at index
-          return unless deleted
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     deleted = new_array.delete_at index
+      #     return unless deleted
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
-      end # create_insert_setters
-      private_class_method :create_delete_at_setters
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
+      # end # create_insert_setters
+      # private_class_method :create_delete_at_setters
 
       # The  attr_delete_if(block) setter method for array values
       ##############################
-      def self.create_delete_if_setters(attr_name, attr_def)
-        Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete_if"
+      # def self.create_delete_if_setters(attr_name, attr_def)
+      #   Windu.load_msg "Creating multi-value setter method #{self}##{attr_name}_delete_if"
 
-        define_method("#{attr_name}_delete_if") do |&block|
-          initialize_multi_value_attr_array attr_name
+      #   define_method("#{attr_name}_delete_if") do |&block|
+      #     initialize_multi_value_attr_array attr_name
 
-          new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
-          new_array.delete_if(&block)
-          return if old_array == new_array
+      #     new_array = instance_variable_get("@#{attr_name}")
+      #     old_array = new_array.dup
+      #     new_array.delete_if(&block)
+      #     return if old_array == new_array
 
-          # now validate the array as a whole for oapi constraints
-          Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
-        end # define method
-      end # create_insert_setters
-      private_class_method :create_delete_if_setters
+      #     # now validate the array as a whole for oapi constraints
+      #     Windu::Validate.array_constraints(new_array, attr_def: attr_def, attr_name: attr_name)
+      #   end # define method
+      # end # create_insert_setters
+      # private_class_method :create_delete_if_setters
 
       # Constructor
       ######################
@@ -404,15 +412,15 @@ module Windu
       def to_api
         api_data = {}
         attrs_for_save = self.class.json_attributes.keys
-        # if defined?(self.class::ATTRIBUTES_FOR_SAVE)
-        #   self.class::ATTRIBUTES_FOR_SAVE
-        # else
-        #   self.class.json_attributes.keys
-        # end
 
         attrs_for_save.each do |attr_name|
           attr_def = self.class.json_attributes[attr_name]
+          next if attr_def[:do_not_send]
+
+          next if @creating && !(attr_def[:required] || attr_def[:send_on_create])
+
           raw_value = instance_variable_get "@#{attr_name}"
+          next unless raw_value
 
           api_data[attr_name] =
             if raw_value.nil?

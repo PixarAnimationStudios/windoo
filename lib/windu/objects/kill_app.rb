@@ -37,6 +37,8 @@ module Windu
 
     RSRC_PATH = 'killapps'
 
+    CONTAINER_CLASS = Windu::Patch
+
     # Attributes
     ######################
 
@@ -46,30 +48,53 @@ module Windu
       # @return [Integer] The id number of this kill app
       killAppId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        do_not_send: true
       },
 
       # @!attribute patchId
       # @return [Integer] The id number of the patch which uses this
       #   kill app
       patchId: {
-        class: :Integer
+        class: :Integer,
+        do_not_send: true
       },
 
       # @!attribute bundleId
       # @return [String] The bundle id of the app that must be quit
       #   e.g. com.apple.Safari
       bundleId: {
-        class: :String
+        class: :String,
+        required: true
       },
 
       # @!attribute appName
       # @return [String] The name of the app that must be quit
       appName: {
-        class: :String
+        class: :String,
+        required: true
       }
 
     }
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response)
+      @killAppId = post_response[:killAppId]
+      @patchId = post_response[:patchId]
+
+      @killAppId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(_put_response)
+      @killAppId
+    end
 
   end # class KillApp
 

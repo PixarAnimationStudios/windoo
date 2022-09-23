@@ -155,11 +155,15 @@ module Windu
       # @param container [Object] the object that contains this managed
       #   array of criteria
       #
-      def initialize(data, container:)
+      # @param softwareTitle [Windu::SoftwareTitle] The title that
+      #   ultimately contains this array of criteria, for some subclasses
+      #   this may be the same as the container.
+      #
+      def initialize(data, container:, softwareTitle:)
         @container = container
-
+        @softwareTitle = softwareTitle
         @criteria_array = data.map do |criterion_data|
-          self.class::MEMBER_CLASS.instantiate_from_container criterion_data
+          self.class::MEMBER_CLASS.instantiate_from_container(container: container, **criterion_data)
         end
       end
 
@@ -224,7 +228,7 @@ module Windu
 
         container_id = @container.send(container_primary_id_key)
         new_id = new_criterion.save container_id: container_id
-
+        @softwareTitle.lastModified = Time.now.utc
         @criteria_array << new_criterion
 
         new_id
@@ -256,13 +260,15 @@ module Windu
         criterion.type = type.to_s if type
         criterion.and_or = and_or if and_or
 
-        criterion.save
+        id = criterion.save
+        @softwareTitle.lastModified = Time.now.utc
+        id
       end
 
       # Delete a criterion by its index or its id
       #
       # @param index [Integer] The array index of the criterion in the array
-      #   Must be provided if not providing requirementId.
+      #   Must be provided if not providing id.
       #
       # @param id [Integer] The primary ID of the criterion in the array
       #   So for an array of Windu::Requirement, you would provide a 'requirementId'
@@ -275,7 +281,9 @@ module Windu
 
         criterion = criterion_by_index_or_id(index: index, id: id)
         @criteria_array.delete_if { |c| c == criterion }
-        criterion.delete
+        del_id = criterion.delete
+        @softwareTitle.lastModified = Time.now.utc
+        del_id
       end
 
       # Private Instance Methods
@@ -288,19 +296,19 @@ module Windu
         elsif id
           criterion = @criteria_array.find { |c| c.send(primary_id_key) == id }
         else
-          raise ArgumentError, 'Either index: or requirementId: must be provided to locate the desired requirement'
+          raise ArgumentError, 'Either index: or id: must be provided to locate the desired criterion'
         end
-        raise Windu::NoSuchItemError, "No requirement at index #{index}" unless criterion
+        raise Windu::NoSuchItemError, 'No matching criterion found' unless criterion
 
         criterion
       end
 
       def primary_id_key
-        @primary_id_key ||= self.class::MEMBER_CLASS.primary_ident_key
+        @primary_id_key ||= self.class::MEMBER_CLASS.primary_id_key
       end
 
       def container_primary_id_key
-        @container_primary_id_key ||= @container.class.primary_ident_key
+        @container_primary_id_key ||= @container.class.primary_id_key
       end
 
     end # class Criterion

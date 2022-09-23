@@ -98,37 +98,43 @@ module Windu
           Windu.verbose_extend extender, self
         end
 
-        # Make a new instance to be created on the server.
+        # Make a new instance on the server.
         #
         # The attributes marked as required must be supplied
         # in the keyword args. Others may be included, or
         # may be added later. To see the required args, use
         # the .required_attributes class method
         #
-        # @param args [Hasn] The attributes of the new item as keyword
+        # @param container [Object] All objects other than SoftwareTitles
+        #   are contained within other objects, and created via methods
+        #   within those container objects. They will pass 'self'
+        #
+        # @param init_data [Hasn] The attributes of the new item as keyword
         #   arguments. Some may be required.
         #
         # @return [Object] A new instance of the class, not yet saved
         #   to the server. To save it use the #save instance method.
         ####
-        def create(**init_data)
+        def create(container: nil, **init_data)
+          container = Windu::Validate.container_for_new_object(
+            new_object_class: self,
+            container: container
+          )
+
           unless (required_attributes & init_data.keys) == required_attributes
             msg = "Missing one or more required attributes for #{self}: #{required_attributes.join ', '}"
             raise ArgumentError, msg
           end
+
           init_data[:creating] = true
-          new init_data
+          init_data[:from_container] = container if container
+
+          obj = new(**init_data)
+          obj.create_on_server
+          obj
         end
 
-        # This is used by container classes to instantiate the objects they contain
-        # e.g. when when instantiating a Patch, it needs to instantiate
-        # killApps, components, and capabilites. it will do so with this method
-        ####
-        def instantiate_from_container(init_data)
-          init_data[:from_container] = true
-          new init_data
-        end
-
+        # Instantiate from the API directly.
         # @return [Object]
         ####
         def fetch(primary_ident)
@@ -138,7 +144,20 @@ module Windu
 
           init_data = Windu.cnx.get("#{self::RSRC_PATH}/#{primary_ident}")
           init_data[:fetching] = true
-          new(**args)
+          new(**init_data)
+        end
+
+        # This is used by container classes to instantiate the objects they contain
+        # e.g. when when instantiating a Patch, it needs to instantiate
+        # killApps, components, and capabilites. it will do so with this method
+        ####
+        def instantiate_from_container(container:, **init_data)
+          container = Windu::Validate.container_for_new_object(
+            new_object_class: self,
+            container: container
+          )
+          init_data[:from_container] = container
+          new(**init_data)
         end
 
         ####
@@ -154,15 +173,15 @@ module Windu
 
       # Constructor
       ######################
-      def initialize(init_data)
+      def initialize(**init_data)
         fetching = init_data.delete :fetching
-        from_container = init_data.delete :from_container
+        @container ||= init_data.delete :from_container
 
         # we save 'creating' in an inst. var so we know to create
         # rather than update later on when we #save
         @creating = true if init_data[:creating]
 
-        unless fetching || from_container || @creating
+        unless fetching || @container || @creating
           raise Windu::UnsupportedError, "#{self.class} can only be instantiated using .fetch or .create, not .new"
         end
 
@@ -179,7 +198,7 @@ module Windu
 
       #   @container =
       #     if defined? self.class::CONTAINER_CLASS
-      #       container_id_key = self.class::CONTAINER_CLASS.primary_ident_key
+      #       container_id_key = self.class::CONTAINER_CLASS.primary_id_key
       #       container_id = send container_id_key
       #       self.class::CONTAINER_CLASS.fetch container_id
       #     end
@@ -189,7 +208,7 @@ module Windu
       #   attribute name. Before creation, this is nil. After deletion, this is -1
       #
       def primary_id
-        send self.class.primary_ident_key
+        send self.class.primary_id_key
       end
 
       # @return [Integer] our primary identifier value before we were deleted.
@@ -199,20 +218,20 @@ module Windu
         @deleted_id
       end
 
-      # Create or update
-      #
-      # When creating anything other than a SoftwareTitle, the id of the
-      # container object must be supplied.
-      #
-      # @param container_id [Integer, nil] The id of the object that will
-      #   contain the item being saved, if we are creating it anew.
-      #   Ignored if updating an object already on the server.
-      #
-      # @return [Integer] the id of the saved object.
-      #
-      ####
-      def save(container_id: nil)
-        @creating ? create_on_server(container_id: container_id) : update_on_server
+      # @return [Windu::APICollection] If this object is contained within another,
+      #   then here is the object that contains it
+      def container
+        @container
+      end
+
+      # @return [Windu::SoftwareTitle] The SoftwareTitle object that ultimately
+      #   contains this object
+      def softwareTitle
+        return self if is_a? Windu::SoftwareTitle
+
+        return container if container.is_a? Windu::SoftwareTitle
+
+        container.softwareTitle
       end
 
       # Delete this object
@@ -223,13 +242,9 @@ module Windu
       def delete
         self.class.delete primary_id
         @deleted_id = primary_id
-        instance_variable_set "@#{self.class.primary_ident_key}", -1
+        instance_variable_set "@#{self.class.primary_id_key}", -1
         @deleted_id
       end
-
-      # Private Instance Methods
-      ####################
-      private
 
       # create a new object on the server from this instance
       #
@@ -239,11 +254,18 @@ module Windu
       #
       # @return [Integer] The id of the newly created object
       #
-      def create_on_server(container_id: nil)
-        return unless @creating
+      def create_on_server
+        unless @creating
+          raise Windu::UnsupportedError,
+                "Do not call 'create_on_server' directly - use the .create class method."
+        end
 
-        rsrc = creation_rsrc(container_id: container_id)
+        rsrc = creation_rsrc
         resp = Windu.cnx.post rsrc, to_json
+
+        # the container method woull only return nil for
+        # SoftwareTitle objects
+        container_id = container&.primary_id
 
         new_id = handle_create_response(resp, container_id: container_id)
 
@@ -253,6 +275,10 @@ module Windu
         new_id
       end
 
+      # Private Instance Methods
+      ####################
+      private
+
       # figure out the resource path to use for POSTing this thing to the server
       #
       # @param container_id [Integer, nil] the id of the object that will
@@ -261,16 +287,30 @@ module Windu
       #
       # @return [String] The resource path for POSTing to the server
       #
-      def creation_rsrc(container_id: nil)
+      def creation_rsrc
         # if no container id was given, the only thing we can create is
         # a SoftwareTitle.  Everything else is created via its container.
-        return Windu::SoftwareTitle::RSRC_PATH unless container_id
+        return Windu::SoftwareTitle::RSRC_PATH unless @container
 
-        "#{self.class::CONTAINER_CLASS::RSRC_PATH}/#{container_id}/#{self.class::RSRC_PATH}"
+        "#{self.class::CONTAINER_CLASS::RSRC_PATH}/#{@container.primary_id}/#{self.class::RSRC_PATH}"
       end
 
-      def update_on_server
-        resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", to_json
+      # Update a single attribute on the server with the current value.
+      #
+      # @param attr_name [Symbol] The key from Class.json_attributes for the value
+      #   we want to update
+      #
+      # @return [Integer] the id of the updated item.
+      def update_on_server(attr_name)
+        if self.class.json_attributes.dig attr_name,
+                                          :do_not_send
+          raise Windu::UnsupportedError,
+                "The value for #{attr_name} cannot be updated directly."
+        end
+
+        json_to_put = { attr_name => send(attr_name) }.to_json
+
+        resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
         handle_update_response(resp)
       end
 

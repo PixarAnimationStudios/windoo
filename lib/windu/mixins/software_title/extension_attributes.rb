@@ -79,6 +79,7 @@ module Windu
           end
 
           new_ea = Windu::ExtensionAttribute.create(
+            container: self,
             key: key,
             displayName: displayName,
             script: script

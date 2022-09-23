@@ -42,6 +42,8 @@ module Windu
 
     RSRC_PATH = 'capabilities'
 
+    CONTAINER_CLASS = Windu::Patch
+
     # Attributes
     ######################
 
@@ -68,6 +70,25 @@ module Windu
     ####
     def self.fetch(*_args)
       raise Windu::UnsupportedError, 'Capabilities are fetched as part of the Patch that contains them'
+    end
+
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response)
+      @capabilityId = post_response[:capabilityId]
+      @patchId = post_response[:patchId]
+
+      @capabilityId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(put_response)
+      @capabilityId
     end
 
   end # class Capability

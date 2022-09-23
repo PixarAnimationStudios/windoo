@@ -36,6 +36,8 @@ module Windu
 
     RSRC_PATH = 'components'
 
+    CONTAINER_CLASS = Windu::Patch
+
     # Attributes
     ######################
 
@@ -45,13 +47,16 @@ module Windu
       # @return [Integer] The id number of this component
       componentId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        do_not_send: true
       },
 
       # @!attribute patchId
       # @return [Integer] The id number of the patch which uses this component
       patchId: {
-        class: :Integer
+        class: :Integer,
+        do_not_send: true,
+        do_not_send: true
       },
 
       # @!attribute name
@@ -70,8 +75,8 @@ module Windu
       # @return [Array<Windu::ComponentCriterion>] The criteria used by
       # this component.
       criteria: {
-        class: Windu::ComponentCriterion,
-        multi: true
+        class: Windu::ComponentCriteriaManager,
+        do_not_send: true
       }
 
     }.freeze
@@ -79,9 +84,13 @@ module Windu
     # Constructor
     ######################
 
-    def initialize(json_data)
+    def initialize(**init_data)
       super
-      @criteria = criteria.map { |data| Windu::ComponentCriterion.new data }
+      @criteria ||= []
+
+      my_patch = container
+      my_title = my_patch.container
+      @criteria = Windu::ComponentCriteriaManager.new @criteria, container: self, softwareTitle: my_title
     end
 
   end # class Component

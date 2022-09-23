@@ -19,49 +19,23 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
+#
 
 # frozen_string_literal: true
 
-# main module
 module Windu
 
-  # The class for dealing with the criteria of Patch Components
-  class ComponentCriterion < Windu::BaseClasses::Criterion
-
-    # Mixins
-    ######################
-
-    include Windu::Mixins::APICollection
+  # The class for dealing with the Array of Software Title Requirements in the
+  # TitleEditor
+  #
+  # @see Windu::BaseClasses::CriteriaManager
+  class ComponentCriteriaManager < Windu::BaseClasses::CriteriaManager
 
     # Constants
     ######################
 
-    RSRC_PATH = 'criteria'
+    MEMBER_CLASS = Windu::ComponentCriterion
 
-    CONTAINER_CLASS = Windu::Component
+  end # class RequirementManager
 
-    # Attributes
-    ######################
-
-    JSON_ATTRIBUTES = {
-
-      # @!attribute criteriaId
-      # @return [Integer] The id number of this criterion
-      criteriaId: {
-        class: :Integer,
-        identifier: :primary,
-        do_not_send: true
-      },
-
-      # @!attribute componentId
-      # @return [Integer] The id number of the component which uses this criterion
-      componentId: {
-        class: :Integer,
-        do_not_send: true
-      }
-
-    }.freeze
-
-  end # class ComponentCriterion
-
-end # module Windu
+end # Module Windu

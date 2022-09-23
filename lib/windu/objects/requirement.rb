@@ -77,9 +77,8 @@ module Windu
     # Constructor
     ######################
 
-    def initialize(json_data, softwareTitle: nil)
-      @container = softwareTitle
-      super json_data
+    def initialize(**init_data)
+      super
     end
 
     # Private Instance Methods
