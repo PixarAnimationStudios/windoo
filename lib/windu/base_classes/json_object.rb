@@ -274,7 +274,6 @@ module Windu
           new_value = validate_attr attr_name, new_value
 
           new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
           new_array << new_value
 
           # now validate the array as a whole for oapi constraints
@@ -297,7 +296,6 @@ module Windu
           new_value = validate_attr attr_name, new_value
 
           new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
           new_array.unshift new_value
 
           # now validate the array as a whole for oapi constraints
@@ -316,7 +314,6 @@ module Windu
           new_value = validate_attr attr_name, new_value
 
           new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
           new_array.insert index, new_value
 
           # now validate the array as a whole for oapi constraints
@@ -334,7 +331,6 @@ module Windu
           initialize_multi_value_attr_array attr_name
 
           new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
           new_array.delete val
           return if old_array == new_array
 
@@ -353,7 +349,6 @@ module Windu
           initialize_multi_value_attr_array attr_name
 
           new_array = instance_variable_get("@#{attr_name}")
-          old_array = new_array.dup
           deleted = new_array.delete_at index
           return unless deleted
 

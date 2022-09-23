@@ -19,8 +19,8 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
-#
-#
+
+# frozen_string_literal: true
 
 # main module
 module Windu
@@ -257,8 +257,6 @@ module Windu
         criterion.and_or = and_or if and_or
 
         criterion.save
-
-        
       end
 
       # Delete a criterion by its index or its id
@@ -278,7 +276,6 @@ module Windu
         criterion = criterion_by_index_or_id(index: index, id: id)
         @criteria_array.delete_if { |c| c == criterion }
         criterion.delete
-        
       end
 
       # Private Instance Methods
