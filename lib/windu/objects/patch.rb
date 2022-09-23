@@ -24,6 +24,7 @@
 
 module Windu
 
+  # A patch represents a specific version of a Software Title.
   class Patch < Windu::BaseClasses::JSONObject
 
     # Mixins

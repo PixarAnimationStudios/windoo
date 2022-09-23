@@ -24,6 +24,8 @@
 
 module Windu
 
+  # A component holds a bunch of criteria defining which computers
+  # have a specific patch version installed.
   class Component < Windu::BaseClasses::JSONObject
 
     # Mixins
@@ -55,7 +57,6 @@ module Windu
       # @return [Integer] The id number of the patch which uses this component
       patchId: {
         class: :Integer,
-        do_not_send: true,
         do_not_send: true
       },
 
