@@ -108,7 +108,7 @@ module Windu
       # Constants
       #########################
 
-      PP_OMITTED_INST_VARS = %i[@container @softwareTitle].freeze
+      PP_OMITTED_INST_VARS = %i[@container].freeze
 
       # Class Methods
       ######################
@@ -149,19 +149,14 @@ module Windu
       # Constructor
       ####################################
 
-      # @param data [Array<Hash>] An array of JSON data from the API
-      #   containing the to construct one of these maintainer objects.
+      # @param data [Array<Hash>] A JSON array of hashes from the API
+      #   containing data the to construct one of these manager objects.
       #
       # @param container [Object] the object that contains this managed
       #   array of criteria
       #
-      # @param softwareTitle [Windu::SoftwareTitle] The title that
-      #   ultimately contains this array of criteria, for some subclasses
-      #   this may be the same as the container.
-      #
-      def initialize(data, container:, softwareTitle:)
+      def initialize(data, container:)
         @container = container
-        @softwareTitle = softwareTitle
         @criteria_array = data.map do |criterion_data|
           self.class::MEMBER_CLASS.instantiate_from_container(container: container, **criterion_data)
         end
@@ -180,16 +175,12 @@ module Windu
       end
 
       # @return [Array<Windu::BaseClasses::Criterion>] A dup'd and frozen copy of
-      #  the array criteria maintained by this class
-      def all
+      #  the array of criteria maintained by this class
+      def to_a
         @criteria_array.dup.freeze
       end
 
       # Add a criterion to the end of this array.
-      #
-      # When adding the criterion via this method, it is added
-      # immediately to the server, there is no need to #save
-      # the container object
       #
       # @param name [String] The name of the criterion
       #   To get an Array of all possible criteria names, use
@@ -227,78 +218,62 @@ module Windu
           and_or: and_or
         )
 
-        @softwareTitle.lastModified = Time.now.utc
         @criteria_array << new_criterion
-
-        new_new_criterion.primary_id
+        new_criterion.primary_id
       end
 
       # Update the details of an existing criterion
       #
-      # You must provide either the Array index of the desired criterion
-      # from the array, or the primary ID of one of them.
       #
       # For the other params, @see #add_criterion. If left nil, they are
       # not changed.
       #
-      # @param index [Integer] The array index of the criterion in the array
-      #   Must be provided if not providing id.
-      #
-      # @param id [Integer] The primary ID of the criterion in the array
+      # @param id [Integer] The primary ID of the criterion to update.
       #   So for an array of Windu::Requirement, you would provide a 'requirementId'
-      #   Must be provided if not providing index.
       #
       # @return [Integer] The id of the updated criterion
       #
-      def update_criterion(index: nil, id: nil, name: nil, operator: nil, value: nil, type: nil, and_or: nil)
-        criterion = criterion_by_index_or_id(index: index, id: id)
+      def update_criterion(id, name: nil, operator: nil, value: nil, type: nil, and_or: nil)
+        criterion = criterion_by_id(id)
 
         criterion.name = name if name
         criterion.operator = operator if operator
         criterion.value = value if value
         criterion.type = type.to_s if type
-        criterion.and_or = and_or if and_or
+        if and_or
+          and_value_to_send = (and_or == :and)
+          criterion.update_on_server(:and, alt_value: and_value_to_send)
+        end
 
-        @softwareTitle.lastModified = Time.now.utc
-        id
+        criterion.primary_id
       end
 
-      # Delete a criterion by its index or its id
+      # Delete a criterion by its id
       #
-      # @param index [Integer] The array index of the criterion in the array
-      #   Must be provided if not providing id.
-      #
-      # @param id [Integer] The primary ID of the criterion in the array
+      # @param id [Integer] The primary ID of the criterion to delete.
       #   So for an array of Windu::Requirement, you would provide a 'requirementId'
-      #   Must be provided if not providing index.
       #
       # @return [Integer] The id of the deleted criterion
       #
-      def delete_criterion(index: nil, id: nil)
-        return if @criteria_array.empty?
+      def delete_criterion(id)
+        criterion = criterion_by_id(id)
 
-        criterion = criterion_by_index_or_id(index: index, id: id)
-        @criteria_array.delete_if { |c| c == criterion }
-        del_id = criterion.delete
-        @softwareTitle.lastModified = Time.now.utc
-        del_id
+        # delete from the array
+        @criteria_array.delete criterion
+
+        # delete from the server
+        criterion.delete
       end
 
       # Private Instance Methods
       ##################################
       private
 
-      def criterion_by_index_or_id(index: nil, id: nil)
-        if index
-          criterion = @criteria_array[index]
-        elsif id
-          criterion = @criteria_array.find { |c| c.send(primary_id_key) == id }
-        else
-          raise ArgumentError, 'Either index: or id: must be provided to locate the desired criterion'
-        end
-        raise Windu::NoSuchItemError, 'No matching criterion found' unless criterion
+      def criterion_by_id(id)
+        criterion = @criteria_array.find { |c| c.send(primary_id_key) == id }
+        return criterion if criterion
 
-        criterion
+        raise Windu::NoSuchItemError, "No matching #{self.class::MEMBER_CLASS} with #{primary_id_key} #{id} found"
       end
 
       def primary_id_key

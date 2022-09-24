@@ -88,10 +88,25 @@ module Windu
     def initialize(**init_data)
       super
       @criteria ||= []
+      @criteria = Windu::ComponentCriteriaManager.new @criteria, container: self
+    end
 
-      my_patch = container
-      my_title = my_patch.container
-      @criteria = Windu::ComponentCriteriaManager.new @criteria, container: self, softwareTitle: my_title
+    # Private Instance Methods
+    ##########################################
+    private
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response)
+      @componentId = post_response[:componentId]
+      @patchId = post_response[:patchId]
+      @componentId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(_put_response)
+      @componentId
     end
 
   end # class Component

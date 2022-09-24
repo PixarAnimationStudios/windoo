@@ -127,7 +127,6 @@ module Windu
     def handle_create_response(post_response, container_id: nil)
       @extensionAttributeId = post_response[:extensionAttributeId]
       @softwareTitleId = container_id
-
       @extensionAttributeId
     end
 

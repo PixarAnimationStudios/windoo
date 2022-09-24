@@ -62,6 +62,20 @@ module Windu
 
     }.freeze
 
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_create_response(post_response)
+      @criteriaId = post_response[:criteriaId]
+      @componentId = post_response[:componentId]
+      @componentId
+    end
+
+    # See the section 'REQUIRED ITEMS WHEN MIXING IN'
+    # in the APICollection mixin.
+    def handle_update_response(_put_response)
+      @criteriaIds
+    end
+
   end # class ComponentCriterion
 
 end # module Windu

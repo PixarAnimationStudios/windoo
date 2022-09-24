@@ -37,8 +37,7 @@ module Windu
     ######################
 
     include Windu::Mixins::APICollection
-    include Windu::Mixins::SoftwareTitle::ExtensionAttributes
-    include Windu::Mixins::SoftwareTitle::Patches
+    include Windu::Mixins::SoftwareTitle::ExtensionAttribute
 
     # Constants
     ######################
@@ -313,19 +312,15 @@ module Windu
       # @!attribute patches
       #   @return [Array<Windu::Patch>] The patches available for this title
       patches: {
-        class: Windu::Patch,
-        multi: true,
+        class: Windu::PatchManager,
         do_not_send: true
       },
 
       # @!attribute extensionAttributes
       #   @return [Array<Windu::ExtensionAttribute>] The Extension Attribute used by this title.
-      #     NOTE: This is plural, and an Array, but there can be only one of them per title.
-      #     To interact with it, use the instance methods #extensionAttribute,
-      #     #add_extensionAttribute, #update_extensionAttribute, #delete_extensionAttribute
-      extensionAttributes: {
+      #     NOTE: See the module Windu::Mixins::SoftwareTitle::ExtentionAttribute
+      extensionAttribute: {
         class: Windu::ExtensionAttribute,
-        multi: true,
         do_not_send: true
       }
     }.freeze
@@ -335,13 +330,8 @@ module Windu
     def initialize(**init_data)
       super
 
-      @requirements ||= []
-      @patches ||= []
-      @extensionAttributes ||= []
-
-      @requirements = Windu::RequirementManager.new @requirements, container: self, softwareTitle: self
-      @patches.map! { |data| Windu::Patch.instantiate_from_container container: self, **data }
-      @extensionAttributes.map! { |data| Windu::ExtensionAttribute.instantiate_from_container container: self, **data }
+      @requirements = Windu::RequirementManager.new @requirements, container: self
+      @patches = Windu::PatchManager.new @patches, container: self
     end
 
     # Public Instance Methods
@@ -361,6 +351,31 @@ module Windu
       self.class.autofill_requirements id
     end
 
+    # Enable this SoftwareTitle
+    def enable
+      return if enabled?
+
+      if requirements.empty? || patches.empty?
+        raise Windu::MissingDataError,
+              'SoftwareTitles must have at least one requirement and one patch before they can be enabled'
+      end
+
+      self.enabled = true
+    end
+
+    # Disable this SoftwareTitle
+    def disable
+      return unless enabled?
+
+      self.enabled = false
+    end
+
+    # Update our modification timestamp from other objects
+    # to the current time when they are changed on the server.
+    def update_modification_time
+      @lastModified = Time.now.utc
+    end
+
     # Private Instance Methods
     ##########################################
     private
@@ -370,7 +385,6 @@ module Windu
     def handle_create_response(post_response, container_id: nil)
       @softwareTitleId = post_response[:softwareTitleId]
 
-      @lastModified = Time.parse(post_response[:lastModified])
       @sourceId = post_response[:sourceId]
       @enabled = post_response[:enabled]
 
@@ -379,8 +393,7 @@ module Windu
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_update_response(put_response)
-      @lastModified = Time.parse(put_response[:lastModified])
+    def handle_update_response(_put_response)
       @softwareTitleId
     end
 

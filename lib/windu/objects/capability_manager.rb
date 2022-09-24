@@ -36,6 +36,22 @@ module Windu
 
     MEMBER_CLASS = Windu::Capability
 
+    # Public Instance Methods
+    #################################
+
+    # Override this method to disable the containing patch
+    # if there are no more capabilities.
+    #
+    def delete_criterion(id)
+      deleted_id = super
+
+      # patches without a capabliity are not valid
+      # so must be disabled
+      @container.disable if @criteria_array.empty?
+
+      deleted_id
+    end
+
   end # class RequirementManager
 
 end # Module Windu

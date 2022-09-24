@@ -81,13 +81,12 @@ module Windu
     def handle_create_response(post_response)
       @capabilityId = post_response[:capabilityId]
       @patchId = post_response[:patchId]
-
       @capabilityId
     end
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_update_response(put_response)
+    def handle_update_response(_put_response)
       @capabilityId
     end
 

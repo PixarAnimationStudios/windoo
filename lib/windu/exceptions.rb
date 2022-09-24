@@ -44,6 +44,8 @@ module Windu
 
     class NoSuchItemError < RuntimeError; end
 
+    class AlreadyExistsError < RuntimeError; end
+
     class UnsupportedError < RuntimeError; end
 
 end # module Windu

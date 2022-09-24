@@ -409,6 +409,10 @@ module Windu
       # @return [Hash] The data to be sent to the API, as a Hash
       #  to be converted to JSON before sending to the JPAPI
       #
+      #  This is only used when creating new objects in the API.
+      #  Updates happen immediately from the setter methods,
+      #  sending only the new value to the server.
+      #
       def to_api
         api_data = {}
         attrs_for_save = self.class.json_attributes.keys
@@ -436,6 +440,10 @@ module Windu
 
       # @return [String] the JSON to be sent to the API for this
       #   object
+      #
+      #  This is only used when creating new objects in the API.
+      #  Updates happen immediately from the setter methods,
+      #  sending only the new value to the server.
       #
       def to_json(*_args)
         JSON.pretty_generate to_api

@@ -263,6 +263,8 @@ module Windu
         rsrc = creation_rsrc
         resp = Windu.cnx.post rsrc, to_json
 
+        update_title_modify_time(resp)
+
         # the container method woull only return nil for
         # SoftwareTitle objects
         container_id = container&.primary_id
@@ -275,9 +277,42 @@ module Windu
         new_id
       end
 
+      # Update a single attribute on the server with the current value.
+      #
+      # @param attr_name [Symbol] The key from Class.json_attributes for the value
+      #   we want to update
+      #
+      # @param alt_value [Object] A value to send that isn't the actual data for the attribute
+      #
+      #
+      # @return [Integer] the id of the updated item.
+      def update_on_server(attr_name, alt_value: nil)
+        if self.class.json_attributes.dig attr_name,
+                                          :do_not_send
+          raise Windu::UnsupportedError,
+                "The value for #{attr_name} cannot be updated directly."
+        end
+
+        value_to_send = alt_value || send(attr_name)
+        json_to_put = { attr_name => value_to_send }.to_json
+
+        resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
+        update_title_modify_time(resp)
+        handle_update_response(resp)
+      end
+
       # Private Instance Methods
       ####################
       private
+
+      # update the timestamp on the title that contains this object
+      def update_title_modify_time(resp)
+        if is_a? Windu::SoftwareTitle
+          @lastModified = Time.parse(resp[:lastModified])
+        else
+          softwareTitle.update_modification_time
+        end
+      end
 
       # figure out the resource path to use for POSTing this thing to the server
       #
@@ -293,25 +328,6 @@ module Windu
         return Windu::SoftwareTitle::RSRC_PATH unless @container
 
         "#{self.class::CONTAINER_CLASS::RSRC_PATH}/#{@container.primary_id}/#{self.class::RSRC_PATH}"
-      end
-
-      # Update a single attribute on the server with the current value.
-      #
-      # @param attr_name [Symbol] The key from Class.json_attributes for the value
-      #   we want to update
-      #
-      # @return [Integer] the id of the updated item.
-      def update_on_server(attr_name)
-        if self.class.json_attributes.dig attr_name,
-                                          :do_not_send
-          raise Windu::UnsupportedError,
-                "The value for #{attr_name} cannot be updated directly."
-        end
-
-        json_to_put = { attr_name => send(attr_name) }.to_json
-
-        resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
-        handle_update_response(resp)
       end
 
     end # module APICollection

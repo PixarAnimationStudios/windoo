@@ -31,6 +31,7 @@ module Windu
     ######################
 
     include Windu::Mixins::APICollection
+    include Windu::Mixins::Patch::Component
 
     # Constants
     ######################
@@ -118,17 +119,15 @@ module Windu
       # @return [Array<Windu::KillApp>] The apps that must be quit before
       #   installing this patch
       killApps: {
-        class: Windu::KillApp,
-        multi: true,
+        class: Windu::KillAppManager,
         do_not_send: true
       },
 
       # @!attribute components
       # @return [Array<Windu::Component>] The components of this patch.
       #   NOTE: there can be only one!
-      components: {
+      component: {
         class: Windu::Component,
-        multi: true,
         do_not_send: true
       },
 
@@ -148,95 +147,32 @@ module Windu
     def initialize(**init_data)
       super
 
-      @killApps ||= []
       @components ||= []
-      @capabilities ||= []
-
-      @killApps.map! { |data| Windu::KillApp.instantiate_from_container container: self, **data }
       @components.map! { |data| Windu::Component.instantiate_from_container container: self, **data }
-      @capabilities = Windu::CapabilityManager.new @capabilities, container: self, softwareTitle: container
+      @capabilities = Windu::CapabilityManager.new @capabilities, container: self
+      @killApps = Windu::KillAppManager.new @killApps, container: self
     end
 
     # Public Instance Methods
     ##########################################
 
-    # Add a killApp to this patch
-    #
-    # A killApp idetifies apps that cannot be running while this patch
-    # is installed. If the user is voluntarily applying the patch, they
-    # will be asked to quit the killApp. If the patch is being applied
-    # automatically, it will be killed automatically.
-    #
-    # @param appName [String] The name of the application that
-    #   cannot be running to install this patch. e.g. Safari.app
-    #
-    # @param bundleId [String] The bundle id of the application
-    #   that cannot be running to install this patch,
-    #   e.g. com.apple.Safari
-    #
-    # @return [Integer] The id of the new killApp
-    #
-    def add_killApp(appName:, bundleId:)
-      new_ka = Windu::KillApp.create(
-        appName: appName,
-        bundleId: bundleId
-      )
+    # Enable this Patch
+    def enable
+      return if enabled?
 
-      new_id = new_ka.save container_id: @patchId
+      if capabilities.empty? || component.nil?
+        raise Windu::MissingDataError,
+              'Patches must have a defined component and at lease one capability before they can be enabled'
+      end
 
-      @killApps << new_ka
-
-      new_id
+      self.enabled = true
     end
 
-    # Update the details of an existing killApp
-    #
-    # You must provide either the Array index of the desired killApp
-    # from the array, or the killAppId of one of them.
-    #
-    # Values not set in the params are left unchanged
-    #
-    # @param index [Integer] The array index of the desired killApp in the array
-    #   Must be provided if not providing id.
-    #
-    # @param id [Integer] The killAppId of the desired killApp in the array
-    #   Must be provided if not providing an index
-    #
-    # @param appName [String] The new name of the application that
-    #   cannot be running to install this patch. e.g. Safari.app
-    #
-    # @param bundleId [String] The new bundle id of the application
-    #   that cannot be running to install this patch,
-    #   e.g. com.apple.Safari
-    #
-    # @return [Integer] The id of the updated killApp
-    #
-    def update_killApp(index: nil, id: nil, bundleId: nil, appName: nil)
-      ka = killApp_by_index_or_id(index: index, id: id)
+    # Disable this Patch
+    def disable
+      return unless enabled?
 
-      ka.bundleId = bundleId if bundleId
-      ka.operator = appName if appName
-
-      ka.save
-    end
-
-    # Delete a killApp by its index or its id
-    #
-    # @param index [Integer] The array index of the desired killApp in the array
-    #   Must be provided if not providing id.
-    #
-    # @param id [Integer] The killAppId of the desired killApp in the array
-    #   Must be provided if not providing an index
-    #
-    # @return [Integer] The id of the deleted killApp
-    #
-    def delete_killApp(index: nil, id: nil)
-      return if @killApps.empty?
-
-      ka = killApp_by_index_or_id(index: index, id: id)
-
-      @killApps.delete_if { |k| k == ka }
-      ka.delete
+      self.enabled = false
     end
 
     # Private Instance Methods
