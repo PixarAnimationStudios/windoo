@@ -219,6 +219,7 @@ module Windu
       #
       def add_criterion(name:, operator:, value:, type: 'recon', and_or: :and)
         new_criterion = self.class::MEMBER_CLASS.create(
+          container: self,
           name: name,
           operator: operator,
           value: value,
@@ -226,12 +227,10 @@ module Windu
           and_or: and_or
         )
 
-        container_id = @container.send(container_primary_id_key)
-        new_id = new_criterion.save container_id: container_id
         @softwareTitle.lastModified = Time.now.utc
         @criteria_array << new_criterion
 
-        new_id
+        new_new_criterion.primary_id
       end
 
       # Update the details of an existing criterion
@@ -260,7 +259,6 @@ module Windu
         criterion.type = type.to_s if type
         criterion.and_or = and_or if and_or
 
-        id = criterion.save
         @softwareTitle.lastModified = Time.now.utc
         id
       end

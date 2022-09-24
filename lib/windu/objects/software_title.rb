@@ -26,6 +26,11 @@
 module Windu
 
   # A Software Title in the Title Editor
+  #
+  # NOTE: SoftwareTitles cannot be enabled when created.
+  # You must call 'enable' on them after creating any
+  # necessary sub-objects.
+  #
   class SoftwareTitle < Windu::BaseClasses::JSONObject
 
     # Mixins
@@ -33,7 +38,7 @@ module Windu
 
     include Windu::Mixins::APICollection
     include Windu::Mixins::SoftwareTitle::ExtensionAttributes
-    include Windu::Mixins::SoftwareTitle::Requirements
+    include Windu::Mixins::SoftwareTitle::Patches
 
     # Constants
     ######################
