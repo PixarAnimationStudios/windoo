@@ -46,6 +46,9 @@ module Windu
     #
     def initialize(data, container:)
       @patch = container
+      @killApp_array = []
+      return unless data
+
       @killApp_array = data.map do |ka_data|
         Windu::KillApp.instantiate_from_container(container: @patch, **ka_data)
       end
@@ -67,6 +70,11 @@ module Windu
     #  the array Patches maintained by this class
     def to_a
       @killApp_array.dup.freeze
+    end
+
+    # @return [Boolean] is our array empty?
+    def empty?
+      @killApp_array.empty?
     end
 
     # Add a killApp to this patch

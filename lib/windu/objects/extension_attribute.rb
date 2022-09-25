@@ -49,6 +49,22 @@ module Windu
 
     CONTAINER_CLASS = Windu::SoftwareTitle
 
+    # Public Class Methods
+    ######################
+
+    # Override for APICollection.create to deal with raw scripts being
+    # passed in and converted to 'values'
+    def self.create(container: nil, **init_data)
+      ea = super
+      # Add the script after creating the EA on the server
+      # For some reason if we include the script (as the "value")
+      # with the initial creation, the script itself is never saved
+      # and the web UI won't show the other values, even tho they
+      # were saved.
+      ea.script = init_data[:script] if init_data[:script]
+      ea
+    end
+
     # Attributes
     ######################
 
@@ -58,13 +74,15 @@ module Windu
       # @return [Integer] The id number of this extension attribute in the Title Editor
       extensionAttributeId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        do_not_send: true
       },
 
       # @!attribute softwareTitleId
       # @return [Integer] The id number of the title which uses this extension attribute
       softwareTitleId: {
-        class: :Integer
+        class: :Integer,
+        do_not_send: true
       },
 
       # @!attribute key
@@ -94,8 +112,11 @@ module Windu
     # Construcor
     ######################
     def initialize(**init_data)
+      # If we were given a raw script when creating a new
+      # EA, save it here  and we'll process it in #create_on_server
+      @script = init_data[:script]
+
       super
-      self.script = @init_data[:script] if @init_data[:script]
     end
 
     # Public Instance Methods
@@ -120,6 +141,7 @@ module Windu
 
     # Private Instance Methods
     ##########################################
+
     private
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'

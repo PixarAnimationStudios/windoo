@@ -49,6 +49,9 @@ module Windu
     #
     def initialize(data, container:)
       @softwareTitle = container
+      @patch_array = []
+      return unless data
+
       @patch_array = data.map do |patch_data|
         Windu::Patch.instantiate_from_container(container: @softwareTitle, **patch_data)
       end
@@ -70,6 +73,11 @@ module Windu
     #  the array Patches maintained by this class
     def to_a
       @patch_array.dup.freeze
+    end
+
+    # @return [Boolean] is our array empty?
+    def empty?
+      @patch_array.empty?
     end
 
     # Add a Patch to this SoftwareTitle. NOTE: patches cannot be

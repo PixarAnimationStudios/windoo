@@ -157,6 +157,9 @@ module Windu
       #
       def initialize(data, container:)
         @container = container
+        @criteria_array = []
+        return unless data
+
         @criteria_array = data.map do |criterion_data|
           self.class::MEMBER_CLASS.instantiate_from_container(container: container, **criterion_data)
         end
@@ -178,6 +181,11 @@ module Windu
       #  the array of criteria maintained by this class
       def to_a
         @criteria_array.dup.freeze
+      end
+
+      # @return [Boolean] is our array empty?
+      def empty?
+        @criteria_array.empty?
       end
 
       # Add a criterion to the end of this array.
