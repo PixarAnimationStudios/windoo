@@ -98,8 +98,8 @@ module Windu
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
     def handle_update_response(put_response)
-      @and_or ||= put_response[:and] == false ? :or : :and
-      @absoluteOrderId = post_response[:absoluteOrderId]
+      @and_or = put_response[:and] == false ? :or : :and
+      @absoluteOrderId = put_response[:absoluteOrderId]
 
       @requirementId
     end

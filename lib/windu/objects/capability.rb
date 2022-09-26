@@ -53,13 +53,15 @@ module Windu
       # @return [Integer] The id number of this capability
       capabilityId: {
         class: :Integer,
-        identifier: :primary
+        identifier: :primary,
+        do_not_send: true
       },
 
       # @!attribute patchId
       # @return [Integer] The id number of the Patch which uses this capability
       patchId: {
-        class: :Integer
+        class: :Integer,
+        do_not_send: true
       }
 
     }.freeze
@@ -78,7 +80,7 @@ module Windu
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_create_response(post_response)
+    def handle_create_response(post_response, container_id: nil)
       @capabilityId = post_response[:capabilityId]
       @patchId = post_response[:patchId]
       @capabilityId

@@ -1,0 +1,276 @@
+# Copyright 2022 Pixar
+#
+#    Licensed under the Apache License, Version 2.0 (the "Apache License")
+#    with the following modification; you may not use this file except in
+#    compliance with the Apache License and the following modification to it:
+#    Section 6. Trademarks. is deleted and replaced with:
+#
+#    6. Trademarks. This License does not grant permission to use the trade
+#       names, trademarks, service marks, or product names of the Licensor
+#       and its affiliates, except as required to comply with Section 4(c) of
+#       the License and to reproduce the content of the NOTICE file.
+#
+#    You may obtain a copy of the Apache License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the Apache License with the above modification is
+#    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#    KIND, either express or implied. See the Apache License for the specific
+#    language governing permissions and limitations under the Apache License.
+
+# frozen_string_literal: true
+
+# main module
+module Windu
+
+  module BaseClasses
+
+    # The common code for dealing with an array of sub-objects
+    # in Software Titles.
+    #
+    # Array Managers manage an array of instances of API objects, preventing
+    # direct access to the array, but providing methods for adding, removing,
+    # and updating array members, while appropriating interacting with the
+    # API.
+    #
+    # Instances of subclasses of this class are held by API objects instead
+    # of the raw Array.
+    #
+    # For example, SoftwareTitles have a #patches method, which is a list
+    # of all the patches for the title.
+    # The SoftwareTitle#patches method returns in instance of Windu::PatchManager,
+    # a subclass of this class, which provides ways to add, update, and
+    # delete patches from the title.
+    #
+    #
+    # Subclasses MUST define the constant MEMBER_CLASS
+    # to indicate the class of the items we are managing
+    #
+    class ArrayManager
+
+      # Constants
+      #########################
+
+      PP_OMITTED_INST_VARS = %i[@container].freeze
+
+      # Attributes
+      ###############################################
+
+      # @return [APICollection] the API object that contains this manager
+      attr_reader :container
+
+      # Constructor
+      ####################################
+
+      # @param data [Array<Hash>] A JSON array of hashes from the API
+      #   containing data the to construct one of these manager objects.
+      #
+      # @param container [Object] the object that contains this managed
+      #   array of criteria
+      #
+      def initialize(data, container:)
+        @container = container
+        @managed_array = []
+        return unless data
+
+        @managed_array = data.map do |member_data|
+          self.class::MEMBER_CLASS.instantiate_from_container(container: container, **member_data)
+        end
+      end
+
+      # Public Instance Methods
+      ####################################
+
+      # Only selected items are displayed with prettyprint
+      # otherwise its too much data in irb.
+      #
+      # @return [Array] the desired instance_variables
+      #
+      def pretty_print_instance_variables
+        instance_variables - PP_OMITTED_INST_VARS
+      end
+
+      # @return [Array<Windu::BaseClasses::Criterion>] A dup'd and frozen copy of
+      #  the array of criteria maintained by this class
+      def to_a
+        @managed_array.dup.freeze
+      end
+
+      # Some convenience wrappers for common array methods
+      # For other array methods, use #to_a to get the
+      # actual (readonly dup of) the array.
+      #####
+
+      # @return [Object]
+      def [](idx)
+        @managed_array[idx]
+      end
+
+      # @return [Object]
+      def first
+        @managed_array.first
+      end
+
+      # @return [Object]
+      def last
+        @managed_array.last
+      end
+
+      # @return [Boolean]
+      def empty?
+        @managed_array.empty?
+      end
+
+      # @return [Integer]
+      def size
+        @managed_array.size
+      end
+      alias count size
+      alias length size
+
+      # @return [Array]
+      def each(&block)
+        @managed_array.each(&block)
+      end
+
+      # @return [Object]
+      def find(if_none = nil, &block)
+        @managed_array.find if_none, &block
+      end
+
+      # Private Instance Methods
+      ##################################
+      private
+
+      # Add a member to the array at a given position.
+      #
+      # Subclasses should define a related method to create the new member
+      # object, then call this method to add it to the array, then do any
+      # other processing needed after, e.g. returning some attribute of
+      # the object.
+      #
+      # NOTE: This method does not communicate with the server. You must add
+      # the object to the server in whatever method calls this one.
+      #
+      # @param new_member [Object] the object to be added to the array
+      #
+      # @param index [Integer] The array index at which to add the object.
+      #   Defaults to -1 (the end of the array)
+      #
+      # @return [Object] the object that was added
+      #
+      def add_member(new_member, index: -1)
+        @managed_array.insert index, new_member
+        new_member
+      end
+
+      # Update the details of an existing array member
+      #
+      # Subclasses should define a related method to do any kind of non-standard
+      # processing id needed, then call this method, perhaps after modifying the
+      # given attribs hash.
+      # This method will then call the matching setter method, if available,
+      # for each item in the provided hash of attributes and new values.
+      #
+      # Those setters may or may not update the server immediately.
+      #
+      # @param id [Integer] The primary ID of the object to update.
+      #   For an array of Windu::Requirement, you would provide a value that is a
+      #   'requirementId', for an array of Windu::Patch, the value would
+      #    be a 'patchId'.
+      #
+      # @param attribs [Hash] Key=>value pairs for attributes to be updated.
+      #   Each key will be transformed into a setter method and send to the
+      #   object with the value as input to the setter.
+      #   If any special handling of an attrib is needed, the overriding
+      #   method should deal with that and modify the attribs hash
+      #   before passing them into this method via #super.
+      #   NOTE: Explicit nils are sent!
+      #
+      #
+      # @return [Object] the object that was updated
+      #
+      def update_member(id, **attribs)
+        member = member_by_id(id)
+
+        attribs.each do |attr_name, new_val|
+          setter = "#{attr_name}="
+          member.send setter, new_val if member.respond_to? setter
+        end
+
+        member
+      end
+
+      # Move a member to a new location in the array
+      #
+      # @param member [Object] the member to move
+      #
+      # @param index [Integer] the new index for the member
+      #
+      # @return [void]
+      def update_local_order(member, index:)
+        curr_idx = @managed_array.index { |m| m == member }
+
+        @managed_array.insert index, @managed_array.delete_at(curr_idx)
+      end
+
+      # Delete a member of the array.
+      # This method will delete the object from the array, and then call the
+      # objects #delete method, if it has one.
+      #
+      # Such a #delete method may or may not delete it from the server immediatley.
+      #
+      # Subclasses should define a related method that calls this one, doing
+      # any processing before or after
+      #
+      # @param id [Integer] The primary ID of the object to delete.
+      #   For an array of Windu::Requirement, you would provide a value that is a
+      #   'requirementId', for an array of Windu::Patch, the value would
+      #    be a 'patchId'.
+      #
+      # @return [Object] The object that was removed from the array
+      #
+      def delete_member(id)
+        member = member_by_id(id)
+
+        # delete from the array and return it
+        @managed_array.delete member
+
+        # call its delete method, which may delete it from the server
+        member.delete if member.respond_to? :delete
+
+        member
+      end
+
+      # Return a member of the array by searching for its 'primary_id'
+      #
+      # @param id [Integer] The primary ID of the object to return.
+      #   For an array of Windu::Requirement, you would provide a value that is a
+      #   'requirementId', for an array of Windu::Patch, the value would
+      #    be a 'patchId'.
+      #
+      # @return [Object] The object with the given id
+      #
+      def member_by_id(id)
+        member = @managed_array.find { |m| m.send(primary_id_key) == id }
+        return member if member
+
+        raise Windu::NoSuchItemError, "No matching #{self.class::MEMBER_CLASS} with #{primary_id_key} #{id} found"
+      end
+
+      # The primary
+      def primary_id_key
+        @primary_id_key ||= self.class::MEMBER_CLASS.primary_id_key
+      end
+
+      def container_primary_id_key
+        @container_primary_id_key ||= @container.class.primary_id_key
+      end
+
+    end # class Criterion
+
+  end # module BaseClasses
+
+end # module Windu

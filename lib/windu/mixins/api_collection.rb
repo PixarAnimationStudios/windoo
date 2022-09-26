@@ -122,15 +122,30 @@ module Windu
           )
 
           unless (required_attributes & init_data.keys) == required_attributes
-            msg = "Missing one or more required attributes for #{self}: #{required_attributes.join ', '}"
-            raise ArgumentError, msg
+            raise ArgumentError,
+                  "Missing one or more required attributes for #{self}: #{required_attributes.join ', '}"
           end
 
-          init_data[:creating] = true
+          # validate all init values
+          json_attributes.each do |attr_name, attr_def|
+            init_val = init_data[attr_name]
+            Windu::Validate.not_nil init_val, msg: "Value for #{attr_name}: must be provided" if attr_def[:required]
+
+            init_data[attr_name] = Windu::Validate.json_attr init_val, attr_def: attr_def, attr_name: attr_name
+          end
+          # add the container if applicable
           init_data[:from_container] = container if container
 
+          # Let other steps in the process know we are being called from #create
+          init_data[:creating] = true
+
+          # Create our instance
           obj = new(**init_data)
+
+          # create it on the server
           obj.create_on_server
+
+          # return it
           obj
         end
 
@@ -211,6 +226,15 @@ module Windu
         send self.class.primary_id_key
       end
 
+      # @return [Boolean] Is this object the same as another, based on their
+      #   primary_id
+      def ==(other)
+        return false unless self.class == other.class
+
+        primary_id == other.primary_id
+      end
+
+      # @return [Boolean] Does this object h
       # @return [Integer] our primary identifier value before we were deleted.
       #   Before deletion, this is nil
       #
@@ -282,19 +306,26 @@ module Windu
       # @param attr_name [Symbol] The key from Class.json_attributes for the value
       #   we want to update
       #
-      # @param alt_value [Object] A value to send that isn't the actual data for the attribute
+      # @param alt_value [Object] A value to send that isn't the actual data for the attribute.
+      #   If provided, the attr_name need not appear as a key in .json_attributes, but
+      #   that name and this value will be sent to the API. See CriteriaManager#update_criterion
+      #   for an example
       #
       #
       # @return [Integer] the id of the updated item.
       def update_on_server(attr_name, alt_value: nil)
-        if self.class.json_attributes.dig attr_name,
-                                          :do_not_send
-          raise Windu::UnsupportedError,
-                "The value for #{attr_name} cannot be updated directly."
+        # This may be nil if given an alt name for an alt value
+        attr_def = self.class.json_attributes[attr_name]
+
+        if attr_def&.dig attr_name, :do_not_send
+          raise Windu::UnsupportedError, "The value for #{attr_name} cannot be updated directly."
         end
 
-        value_to_send = alt_value || send(attr_name)
-        json_to_put = { attr_name => value_to_send }.to_json
+        # get the value, then convert if needed to API format
+        value_to_use = alt_value.nil? ? send(attr_name) : alt_value
+        value_to_use = Windu::Converters.send attr_def[:to_api], value_to_use.dup if attr_def&.dig attr_name, :to_api
+
+        json_to_put = { attr_name => value_to_use }.to_json
 
         resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
         update_title_modify_time(resp)

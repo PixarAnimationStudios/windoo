@@ -103,12 +103,7 @@ module Windu
     # Subclasses MUST define the constant MEMBER_CLASS
     # to indicate the class of the items we are managing
     #
-    class CriteriaManager
-
-      # Constants
-      #########################
-
-      PP_OMITTED_INST_VARS = %i[@container].freeze
+    class CriteriaManager < Windu::BaseClasses::ArrayManager
 
       # Class Methods
       ######################
@@ -156,37 +151,12 @@ module Windu
       #   array of criteria
       #
       def initialize(data, container:)
-        @container = container
-        @criteria_array = []
-        return unless data
-
-        @criteria_array = data.map do |criterion_data|
-          self.class::MEMBER_CLASS.instantiate_from_container(container: container, **criterion_data)
-        end
+        super
+        @criteria_array = @managed_array
       end
 
       # Public Instance Methods
       ####################################
-
-      # Only selected items are displayed with prettyprint
-      # otherwise its too much data in irb.
-      #
-      # @return [Array] the desired instance_variables
-      #
-      def pretty_print_instance_variables
-        instance_variables - PP_OMITTED_INST_VARS
-      end
-
-      # @return [Array<Windu::BaseClasses::Criterion>] A dup'd and frozen copy of
-      #  the array of criteria maintained by this class
-      def to_a
-        @criteria_array.dup.freeze
-      end
-
-      # @return [Boolean] is our array empty?
-      def empty?
-        @criteria_array.empty?
-      end
 
       # Add a criterion to the end of this array.
       #
@@ -213,46 +183,61 @@ module Windu
       #   criterion is joined with the previous one in a chain of
       #   boolean logic. Default is :and
       #
+      # @param absoluteOrderId [Integer] The zero-based position of this criterion
+      #   among all the others in the array. By default, this criterion will be added
+      #   at '-1', the end of the array
       #
       # @return [Integer] The id of the new criterion
       #
-      def add_criterion(name:, operator:, value:, type: 'recon', and_or: :and)
+      def add_criterion(name:, operator:, value:, type: 'recon', and_or: :and, absoluteOrderId: nil)
+        absoluteOrderId ||= @criteria_array.size
+
         new_criterion = self.class::MEMBER_CLASS.create(
-          container: self,
+          container: container,
+          and_or: and_or,
           name: name,
           operator: operator,
           value: value,
           type: type.to_s,
-          and_or: and_or
+          absoluteOrderId: absoluteOrderId
         )
 
-        @criteria_array << new_criterion
+        # call the method from our superclass to add it to the array
+        add_member new_criterion, index: absoluteOrderId
         new_criterion.primary_id
       end
 
-      # Update the details of an existing criterion
+      # Update the details of an existing criterion object
       #
-      #
-      # For the other params, @see #add_criterion. If left nil, they are
+      # For the other params, see #add_criterion. If left nil, they are
       # not changed.
       #
       # @param id [Integer] The primary ID of the criterion to update.
       #   So for an array of Windu::Requirement, you would provide a 'requirementId'
       #
+      # @param attribs [Hash] @see #add_criterion
+      #
       # @return [Integer] The id of the updated criterion
       #
-      def update_criterion(id, name: nil, operator: nil, value: nil, type: nil, and_or: nil)
-        criterion = criterion_by_id(id)
+      def update_criterion(id, **attribs)
+        # pull this out and we'll process it
+        # after calling update_member
+        and_or = attribs.delete :and_or
 
-        criterion.name = name if name
-        criterion.operator = operator if operator
-        criterion.value = value if value
-        criterion.type = type.to_s if type
+        # do the other the updates
+        criterion = update_member(id, **attribs)
+
+        # handle any change to 'and_or', which is 'and' on the server
         if and_or
           and_value_to_send = (and_or == :and)
           criterion.update_on_server(:and, alt_value: and_value_to_send)
         end
 
+        # if we changed the absoluteOrderId, update the position in the
+        # local array also
+        update_local_order criterion, index: attribs[:absoluteOrderId] if attribs[:absoluteOrderId]
+
+        # return the id of the one we changed
         criterion.primary_id
       end
 
@@ -264,32 +249,8 @@ module Windu
       # @return [Integer] The id of the deleted criterion
       #
       def delete_criterion(id)
-        criterion = criterion_by_id(id)
-
-        # delete from the array
-        @criteria_array.delete criterion
-
-        # delete from the server
-        criterion.delete
-      end
-
-      # Private Instance Methods
-      ##################################
-      private
-
-      def criterion_by_id(id)
-        criterion = @criteria_array.find { |c| c.send(primary_id_key) == id }
-        return criterion if criterion
-
-        raise Windu::NoSuchItemError, "No matching #{self.class::MEMBER_CLASS} with #{primary_id_key} #{id} found"
-      end
-
-      def primary_id_key
-        @primary_id_key ||= self.class::MEMBER_CLASS.primary_id_key
-      end
-
-      def container_primary_id_key
-        @container_primary_id_key ||= @container.class.primary_id_key
+        delete_member(id)
+        id
       end
 
     end # class Criterion

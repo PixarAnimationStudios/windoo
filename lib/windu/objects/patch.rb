@@ -66,9 +66,7 @@ module Windu
       #   of this patch in the #patches attribute of the SoftwareTitle
       #   instance that uses this patch
       absoluteOrderId: {
-        class: :Integer,
-        readonly: true,
-        do_not_send: true
+        class: :Integer
       },
 
       # @!attribute enabled
@@ -87,9 +85,10 @@ module Windu
       # @!attribute releaseDate
       # @return [Time] When this patch was released
       releaseDate: {
-        class: Time,
-        to_ruby: :parse,
-        to_api: :iso8601
+        class: :Time,
+        required: true,
+        to_ruby: :to_time,
+        to_api: :time_to_api
       },
 
       # @!attribute standalone
@@ -146,9 +145,6 @@ module Windu
 
     def initialize(**init_data)
       super
-
-      @components ||= []
-      @components.map! { |data| Windu::Component.instantiate_from_container container: self, **data }
       @capabilities = Windu::CapabilityManager.new @capabilities, container: self
       @killApps = Windu::KillAppManager.new @killApps, container: self
     end
@@ -196,19 +192,6 @@ module Windu
       @absoluteOrderId = put_response[:absoluteOrderId]
 
       @patchId
-    end
-
-    def killApp_by_index_or_id(index: nil, id: nil)
-      if index
-        ka = @killApps[index]
-      elsif id
-        ka = @killApps.find { |k| k.killAppId == id }
-      else
-        raise ArgumentError, 'Either index: or id: must be provided to locate the desired killApp'
-      end
-      raise Windu::NoSuchItemError, 'No matching killApp found' unless ka
-
-      ka
     end
 
   end # class Patch

@@ -134,8 +134,24 @@ module Windu
           msg = "There was a error processing your request, status: #{resp.status}"
 
         end # case
-        mag = "#{msg}\nResponse Body:\n#{resp.body}"
+        msg = "#{msg}\nResponse Body:\n#{parse_http_error_body(resp)}"
         raise err, msg
+      end
+
+      # get the body of the error response in a readable format
+      def parse_http_error_body(resp)
+        err_text = +''
+        errs_in_resp = resp.body[:errors].map do |err_hash|
+          err_text << "Code: #{err_hash[:code]}\n"
+          err_hash.each do |k, v|
+            next if k == :code
+
+            err_text << "  #{k}: #{v}\n"
+          end
+        end
+        err_text.chomp
+      rescue StandardError
+        res.body
       end
 
     end # module Actions

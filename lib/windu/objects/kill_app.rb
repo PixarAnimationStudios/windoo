@@ -83,7 +83,7 @@ module Windu
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_create_response(post_response)
+    def handle_create_response(post_response, container_id: nil)
       @killAppId = post_response[:killAppId]
       @patchId = post_response[:patchId]
 

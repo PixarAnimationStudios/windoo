@@ -185,36 +185,18 @@ module Windu
       def self.create_getters(attr_name, attr_def)
         Windu.load_msg "Creating getter method #{self}##{attr_name}"
 
-        # multi_value - only return a frozen dup, no direct editing of the Array
-        if attr_def[:multi]
-          define_method(attr_name) do
-            initialize_multi_value_attr_array attr_name
-
-            instance_variable_get("@#{attr_name}").dup.freeze
-          end
-
-        # single value
-        else
-          define_method(attr_name) { instance_variable_get("@#{attr_name}") }
-        end
+        define_method(attr_name) { instance_variable_get("@#{attr_name}") }
 
         # all booleans get predicate ? aliases
         alias_method("#{attr_name}?", attr_name) if attr_def[:class] == :Boolean
       end # create getters
       private_class_method :create_getters
 
-      # create setter(s) for an attribute, and any aliases needed
+      # create setter for an attribute
       ##############################
       def self.create_setters(attr_name, attr_def)
         # readonly values don't get setters
-        #
-        # do_not_send values don't get setters because
-        # setters immediately send the data to the server
-        #
-        # multi/array values don't get setters because the
-        # array items are API objects themselves, and they have
-        # wrapper methodss that deal with them separately
-        return if attr_def[:readonly] || attr_def[:do_not_send] || attr_def[:multi]
+        return if attr_def[:readonly]
 
         Windu.load_msg "Creating setter method #{self}##{attr_name}="
 
@@ -227,6 +209,8 @@ module Windu
 
           # if this isn't a server object, we're done
           return unless defined? self.class::RSRC_PATH
+          # of this value is 'do not send' we are done
+          return if attr_def[:do_not_send]
 
           update_on_server attr_name
         end # define method
@@ -392,9 +376,11 @@ module Windu
         @init_data.each do |key, val|
           next unless self.class.json_attributes.key? key
 
+          # The inst var is always a dup of the init_data, so that
+          # changes to it don't affect the init data.
           ruby_val =
-            if self.class.json_attributes[key][:to_ruby]
-              self.class.json_attributes[key][:class].send self.class.json_attributes[key][:to_ruby], val
+            if val && self.class.json_attributes[key][:to_ruby]
+              Windu::Converters.send self.class.json_attributes[key][:to_ruby], val.dup
             else
               val.dup
             end
@@ -409,9 +395,12 @@ module Windu
       # @return [Hash] The data to be sent to the API, as a Hash
       #  to be converted to JSON before sending to the JPAPI
       #
-      #  This is only used when creating new objects in the API.
-      #  Updates happen immediately from the setter methods,
+      #  This is currently only used when creating new objects in the API.
+      #  Updates happen immediately per attribute, from the setter methods,
       #  sending only the new value to the server.
+      #
+      #  It might also be used in the future to export JSON title
+      #  definitions to import into other Title Servers.
       #
       def to_api
         api_data = {}
@@ -421,16 +410,11 @@ module Windu
           attr_def = self.class.json_attributes[attr_name]
           next if attr_def[:do_not_send]
 
-          next if @creating && !(attr_def[:required] || attr_def[:send_on_create])
-
           raw_value = instance_variable_get "@#{attr_name}"
-          next unless raw_value
 
           api_data[attr_name] =
             if raw_value.nil?
               nil
-            elsif attr_def[:multi]
-              multi_to_api(raw_value, attr_def)
             else
               single_to_api(raw_value, attr_def)
             end
@@ -476,10 +460,11 @@ module Windu
       end
 
       # call to_api on a single value if it knows that method
-      #
+      # or pass it to the converter module if needed
+      # otherwise, the value is good as is
       def single_to_api(raw_value, attr_def)
         if attr_def[:to_api]
-          raw_value.send attr_def[:to_api]
+          Windu::Converters.send attr_def[:to_api], raw_value.dup
         elsif raw_value.respond_to?(:to_api)
           raw_value.to_api
         else

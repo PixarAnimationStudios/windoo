@@ -73,7 +73,7 @@ module Windu
     # :lastModified=>"2022-09-10T22:06:39Z",
     # :currentVersion=>"5.0.1",
     # :requirements=>3,
-    # :patches=>0,  # Number of enabled patches, not existing patches.
+    # :patches=>0,  # Number of enabled patches, not existing patches?
     # :id=>"com.somecompany.test",
     # :sourceId=>0,
     # :source=>"Local"
@@ -250,7 +250,7 @@ module Windu
       #       potential updates from other places (like the Web UI)
       #       you should re-fetch the Title
       lastModified: {
-        class: Time,
+        class: :Time,
 
         # for classes (like Time) that are not Symbols (like :String)
         # This is the Class method to call on them to convert the
@@ -258,7 +258,7 @@ module Windu
         # will be passed as the sole param to this method.
         # For most, it will be :new, but for, e.g., Time, it is
         # :parse
-        to_ruby: :parse,
+        to_ruby: :to_time,
 
         # The method to call on the value when converting to
         # data to be sent to the API.

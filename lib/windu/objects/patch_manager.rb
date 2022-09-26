@@ -31,12 +31,7 @@ module Windu
   # This object is returned by SoftwareTitle.patches
   #
   #
-  class PatchManager
-
-    # Constants
-    #########################
-
-    PP_OMITTED_INST_VARS = %i[@container].freeze
+  class PatchManager < Windu::BaseClasses::ArrayManager
 
     # Constructor
     ####################################
@@ -48,41 +43,28 @@ module Windu
     #   contains this array of Patches
     #
     def initialize(data, container:)
-      @softwareTitle = container
-      @patch_array = []
-      return unless data
-
-      @patch_array = data.map do |patch_data|
-        Windu::Patch.instantiate_from_container(container: @softwareTitle, **patch_data)
-      end
+      super
+      @patch_array = @managed_array
     end
 
     # Public Instance Methods
     ####################################
 
-    # Only selected items are displayed with prettyprint
-    # otherwise its too much data in irb.
-    #
-    # @return [Array] the desired instance_variables
-    #
-    def pretty_print_instance_variables
-      instance_variables - PP_OMITTED_INST_VARS
-    end
-
-    # @return [Array<Windu::Patch>] A dup'd and frozen copy of
-    #  the array Patches maintained by this class
-    def to_a
-      @patch_array.dup.freeze
-    end
-
-    # @return [Boolean] is our array empty?
-    def empty?
-      @patch_array.empty?
-    end
-
     # Add a Patch to this SoftwareTitle. NOTE: patches cannot be
     # enabled when added, you must call 'enable' on them after creating
     # any necessary sub-objects.
+    #
+    # Patches must be ordered from newest to oldest, and are indexed zero-based,
+    # like Ruby Arrays.
+    #
+    # By default, patches are added at the front, index 0,meaning the are the newest.
+    #
+    # To make the new patch appear later in the order, provide a zero-based
+    # integer as 'absoluteOrderId' (0, the first in the order, is the default).
+    # So to add this new patch as older than the first and second, use
+    #    absoluteOrderId: 2
+    # All others will be adjusted automatically.
+    #
     #
     # @param version [String] The version of the title that is installed
     #   by this patch. Required.
@@ -91,7 +73,7 @@ module Windu
     #   this patch will run on. Required.
     #
     # @param releaseDate [Time, String] The date and time this patch
-    #   became available.
+    #   became available. Will be stored as a UTC timestampe in ISO8601 format.
     #
     # @param reboot [Boolean] Does this patch require a reboot after installation?
     #
@@ -99,51 +81,43 @@ module Windu
     #   install of this SoftwareTitle? If not, a previous version must already
     #   be installed before this one can be.
     #
+    # @param absoluteOrderId [Integer] The zero-based position of this patch among
+    #   all the others for this title. Ordered from newest to oldest. By default,
+    #   this patch will be added at '0'  the newest, first in the Array.
+    #
     # @return [Integer] The id of the new Patch
     #
-    def add_patch(version:, minimumOperatingSystem:, releaseDate: nil, reboot: nil, standalone: nil)
+    def add_patch(version:, minimumOperatingSystem:, releaseDate: nil, reboot: nil, standalone: nil, absoluteOrderId: 0)
       new_patch = Windu::Patch.create(
-        container: self,
+        container: container,
         version: version,
         minimumOperatingSystem: minimumOperatingSystem,
         releaseDate: releaseDate,
         reboot: reboot,
-        standalone: standalone
+        standalone: standalone,
+        absoluteOrderId: absoluteOrderId
       )
 
-      @patch_array.unshift new_patch
-      new_patch.patchId
+      # call the method from our superclass to add it to the array
+      add_member new_patch, index: absoluteOrderId
+      new_patch.primary_id
     end
 
     # Update a Patch in this SoftwareTitle.
     #
     # @param patchId [Integer] the id of the Patch to be updated.
     #
-    # @param version [String] The version of the title that is installed
-    #   by this patch. Required.
-    #
-    # @param minimumOperatingSystem [String] The lowest OS version that
-    #   this patch will run on. Required.
-    #
-    # @param releaseDate [Time, String] The date and time this patch
-    #   became available.
-    #
-    # @param reboot [Boolean] Does this patch require a reboot after installation?
-    #
-    # @param standalone [Boolean] Can this patch be installed as the initial
-    #   install of this SoftwareTitle? If not, a previous version must already
-    #   be installed before this one can be.
+    # @param attribs [Hash] The attribute(s) to update. See #add_patch
     #
     # @return [Integer] The id of the updated Patch
     #
-    def update_patch(patchId, version: nil, minimumOperatingSystem: nil, releaseDate: nil, reboot: nil, standalone: nil)
-      patch = patch_by_id(patchId)
+    def update_patch(patchId, **attribs)
+      patch = update_member(patchId, **attribs)
 
-      patch.version = version if version
-      patch.minimumOperatingSystem = minimumOperatingSystem if minimumOperatingSystem
-      patch.releaseDate = releaseDate if releaseDate
-      patch.reboot = reboot if reboot
-      patch.standalone = standalone if standalone
+      if attribs[:absoluteOrderId]
+        update_local_order criterion, index: attribs[:absoluteOrderId]
+        update_patch_order
+      end
 
       patch.patchId
     end
@@ -160,17 +134,13 @@ module Windu
     # @return [Integer] The id of the deleted Patch
     #
     def delete_patch(patchId)
-      patch = patch_by_id(patchId)
-
-      # delete from the array
-      @patch_array.delete patch
-
-      # delete from the server
-      patch.delete
+      patch = delete_member(patchId)
 
       # titles without a patch are not valid
       # so must be disabled
-      patch.softwareTitle.disable if @patch_array.empty?
+      patch.softwareTitle.disable if empty?
+
+      update_patch_order
 
       patchId
     end
@@ -179,11 +149,8 @@ module Windu
     ################################
     private
 
-    def patch_by_id(patchId)
-      patch = @patch_array.find { |p| p.patchId == patchId }
-      return patch if patch
-
-      raise Windu::NoSuchItemError, "No patch with patchId #{patchId} in this SoftwareTitle"
+    def update_patch_order
+      @patch_array.each_with_index { |p, i| p.absoluteOrderId = i unless p.absoluteOrderId == i }
     end
 
   end # class PatcheManager

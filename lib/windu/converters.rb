@@ -19,54 +19,30 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
-#
 
 # frozen_string_literal: true
 
-# Core Standard Libraries
-######
-require 'English'
-require 'time'
-
-# Load other gems
-######
-require 'pixar-ruby-extensions'
-require 'faraday' # >= 0.17.0
-require 'faraday_middleware' # >= 0.13.0
-
-# Zeitwerk
-######
-
-# Configure the Zeitwerk loader, See https://github.com/fxn/zeitwerk
-# This also defines other Windu module methods related to loading
-#
-require 'windu/zeitwerk_config'
-
-# the `Zeitwerk::Loader.for_gem` creates the loader object, and must
-# happen in this file, so we pass it into a method defined in
-# zeitwerk_config
-#
-# BE CAREFUL - Do not load anything above here that
-# defines the Windu:: module namespace!
-WinduZeitwerkConfig.setup_zeitwerk_loader Zeitwerk::Loader.for_gem
-
-# Load windu stuff here that we don't autoload
-require 'windu/exceptions'
-
-# The main module
 module Windu
 
-  extend Windu::Loading
-  include Windu::Constants
-  extend Windu::Utility
-  extend Windu::DefaultConnection
+  # Methods for converting values in standard ways
+  # Usually used for converting between Ruby values and JSON values
+  # between Windu and the Server
+  module Converters
 
-  # the single instance of our configuration object
-  def self.config
-    Windu::Configuration.instance
-  end
+    # @param time [Time] a Time object to send to the API
+    # @return [String] The time in UTC and ISO8601 format
+    def self.time_to_api(time)
+      time.utc.iso8601
+    end
 
-end # module Windu
+    # @param time [#to_s] a timestamp from the API
+    # @return [Time] The timestamp as a Time object
+    def self.to_time(time)
+      return time if time.is_a? Time
 
-# testing zeitwerk loading, if the correct file is present
-WinduZeitwerkConfig.eager_load_for_testing
+      Time.parse time.to_s
+    end
+
+  end # Utility
+
+end # Windu

@@ -29,44 +29,74 @@ module Windu
 
     # The base class for dealing with criteria in Software Titles.
     #
-    # Criteria are individual comparisons or 'filter rules' used singly
-    # or in ordered groups to identify matching computers, much as they
-    # are used for Jamf Smart Groups or Advanced Searches.
+    # Criteria are individual comparisons or 'filter rules' used singly or
+    # in ordered groups (stored in an Array) to identify matching computers,
+    # much as they are used for Jamf Smart Groups or Advanced Searches.
     #
     # For example, a single criterion might specify all computers where
     # the app 'FooBar.app' is installed. Another might specify that
     # FooBar.app is version 12.3.6, or that the OS is Big Sur or higher.
+    #
+    # The arrays are not directly accessible, but are managed by subclasses
+    # of Windu::CriteriaManager.
     #
     # In SoftwareTitles, criteria are used in three places:
     #
     # - As the 'requirements' of a Software Title.
     #   Each requrement is one criterion, and the Array of them
     #   define which computers have any version of the title
-    #   installed.
+    #   installed. Access to the Array is handled via the
+    #   Windu::RequirementManager class.
     #
     # - As the criteria of the sole 'component' of a Patch.
     #   A Patch's 'components' is an Array of one item (for historical
     #   reasons apparently).  That component contains an Array of
     #   criteria that define which computers have _that specific_
-    #   version of the Patch's Title installed.
+    #   version of the Patch's Title installed. Access to the Array is
+    #    handled via the  Windu::ComponentCriteriaManager class.
     #
     # - As the 'capabilities' of a Patch.
     #   Each capability is one criterion, and the Array of them
     #   define which computers are capable of running, and thus
-    #   allowed to install, this Patch.
+    #   allowed to install, this Patch. Access to the Array is handled
+    #   via the Windu::CapabilitytManager class.
+    #
+    # Criteria are immutable once created, mostly because to modify any of the
+    # primary values of one (name, operator, & value), you have to modify them all
+    # at once or the server will complain of possible mismatches, which can't be
+    # worked around when updating the values individually.
+    #
+    # Instead of modifying one, delete it and replace it with a new one in the
+    # position in the array. There's a convenience method for this in the
+    # CriteriaManager subclass called #replace_criterion(id)
+    #
+    # When creating criteria using CriteriaManager#add_criterion, they area added
+    # to the end of the array by default, but you can specify the position using the
+    # absoluteOrderId value. You can also move the position of a criterion in the
+    # array using CriteriaManager#update_criterion method and passing in the new
+    # absoluteOrderId value.
     #
     class Criterion < Windu::BaseClasses::JSONObject
+
+      # Mixins
+      #####################
+
+      extend Windu::Mixins::Immutable
 
       # Constants
       #####################
 
       # The authoritative list of available types can be read from the API
-      # at GET 'valuelists/criteria/types'
+      # at GET 'valuelists/criteria/types', or also via
+      # Windu::BaseClasses::CriteriaManager.available_types
 
       TYPE_RECON = 'recon'
       TYPE_EA = 'extensionAttribute'
 
       TYPES = [TYPE_RECON, TYPE_EA].freeze
+
+      # These attributes must be updated together for Criteria objects
+      ATTRIBUTES_TO_UPDATE_TOGETHER = %i[name operator value].freeze
 
       # Attributes
       ######################
@@ -79,8 +109,7 @@ module Windu
         #   of this requirement in the #requirements attribute of the SoftwareTitle
         #   instance that uses this requirement
         absoluteOrderId: {
-          class: :Integer,
-          readonly: true
+          class: :Integer
         },
 
         # @!attribute and_or
@@ -113,9 +142,11 @@ module Windu
         },
 
         # @!attribute value
-        # @return [String] The the value to apply with the operator to the named criteria
+        # @return [Object] The the value to apply with the operator to the named criteria
+        #   We can't specify the class of the value, because it might be a String, Integer, Time, or
+        #   something else.
         value: {
-          class: :String
+          class: :Object
         },
 
         # @!attribute type
@@ -131,15 +162,34 @@ module Windu
       ######################
       def initialize(**init_data)
         super
-        @and_or ||= @init_data[:and] == false ? :or : :and
+        # if #super didn't set @and_or, set it now
+        if @and_or.nil?
+          @and_or = @init_data[:and] == false ? :or : :and
+        end
       end
 
-      # handle @and_or before saving
+      # Public Instance Methods
+      ################################
+
+      # Override handle @and_or before saving
+      #
       def to_api
         api_data = super
         api_data[:and] = (@and_or == :and)
         api_data.delete :and_or
         api_data
+      end
+
+      # method so that managers can set the absoluteOrderId
+      # after moving the criterion in the managed array
+      #
+      # @param index [Integer] the new absoluteOrderId
+      #   to send to the server
+      #
+      # @return [void]
+      #
+      def move_to_absoluteOrderId(index)
+        Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", { absoluteOrderId: index }.to_json
       end
 
     end # class Criterion

@@ -55,14 +55,13 @@ module Windu
     # Override for APICollection.create to deal with raw scripts being
     # passed in and converted to 'values'
     def self.create(container: nil, **init_data)
-      ea = super
-      # Add the script after creating the EA on the server
-      # For some reason if we include the script (as the "value")
-      # with the initial creation, the script itself is never saved
-      # and the web UI won't show the other values, even tho they
-      # were saved.
-      ea.script = init_data[:script] if init_data[:script]
-      ea
+      if init_data[:script]
+        require 'base64'
+        init_data[:value] = Base64.encode64 init_data[:script]
+        init_data.delete :script
+      end
+
+      super
     end
 
     # Attributes

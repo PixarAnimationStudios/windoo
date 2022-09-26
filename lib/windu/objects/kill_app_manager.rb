@@ -28,12 +28,7 @@ module Windu
   # Methods to mix in to the Patch class,
   # relating to KillApps
   #
-  class KillAppManager
-
-    # Constants
-    #########################
-
-    PP_OMITTED_INST_VARS = %i[@container @softwareTitle].freeze
+  class KillAppManager < Windu::BaseClasses::ArrayManager
 
     # Constructor
     ####################################
@@ -45,37 +40,12 @@ module Windu
     #   contains this array of KillApps
     #
     def initialize(data, container:)
-      @patch = container
-      @killApp_array = []
-      return unless data
-
-      @killApp_array = data.map do |ka_data|
-        Windu::KillApp.instantiate_from_container(container: @patch, **ka_data)
-      end
+      super
+      @killApp_array = @managed_array
     end
 
     # Public Instance Methods
     ####################################
-
-    # Only selected items are displayed with prettyprint
-    # otherwise its too much data in irb.
-    #
-    # @return [Array] the desired instance_variables
-    #
-    def pretty_print_instance_variables
-      instance_variables - PP_OMITTED_INST_VARS
-    end
-
-    # @return [Array<Windu::Patch>] A dup'd and frozen copy of
-    #  the array Patches maintained by this class
-    def to_a
-      @killApp_array.dup.freeze
-    end
-
-    # @return [Boolean] is our array empty?
-    def empty?
-      @killApp_array.empty?
-    end
 
     # Add a killApp to this patch
     #
@@ -95,12 +65,14 @@ module Windu
     #
     def add_killApp(appName:, bundleId:)
       new_ka = Windu::KillApp.create(
+        container: container,
         appName: appName,
         bundleId: bundleId
       )
 
-      @killApp_array << new_ka
-      new_ka.killAppId
+      # call the method from our superclass to add it to the array
+      add_member new_ka
+      new_ka.primary_id
     end
 
     # Update the details of an existing killApp
@@ -109,21 +81,12 @@ module Windu
     #
     # @param id [Integer] The killAppId of the desired killApp in the array
     #
-    # @param appName [String] The new name of the application that
-    #   cannot be running to install this patch. e.g. Safari.app
-    #
-    # @param bundleId [String] The new bundle id of the application
-    #   that cannot be running to install this patch,
-    #   e.g. com.apple.Safari
+    # @param attribs [Hash] The attribute(s) to update. See #add_killApp
     #
     # @return [Integer] The id of the updated killApp
     #
-    def update_killApp(id, bundleId: nil, appName: nil)
-      ka = killApp_by_id(id)
-
-      ka.bundleId = bundleId if bundleId
-      ka.operator = appName if appName
-
+    def update_killApp(id, **attribs)
+      ka = update_member(id, **attribs)
       ka.killAppId
     end
 
@@ -134,13 +97,8 @@ module Windu
     # @return [Integer] The id of the deleted killApp
     #
     def delete_killApp(id)
-      ka = killApp_by_id(id)
-
-      # delete from the array
-      @killApp_array.delete ka
-
-      # delete from the server
-      ka.delete
+      delete_member(id)
+      id
     end
 
     # Private Instance Methods
@@ -148,7 +106,7 @@ module Windu
     private
 
     def killApp_by_id(killAppId)
-      killApp = @killApp_array.find { |p| p.patchId == killAppId }
+      killApp = @killApp_array.find { |k| k.killAppId == killAppId }
       return killApp if killApp
 
       raise Windu::NoSuchItemError, "No killApp with killAppId #{killApp} in this Patch"

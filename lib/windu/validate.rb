@@ -27,11 +27,10 @@ module Windu
 
   # A collection of methods implementing data constraints
   #
-  # As with that module:
   # Some of these methods can take multiple input types, such as a String
   # or an number.  All of them will either raise an exception
   # if the value isn't valid, or will return a standardized form of the input
-  # (e.g. a number, even if given a String)
+  # (e.g. a number or a Time,  even if given a String)
   #
   module Validate
 
@@ -52,8 +51,8 @@ module Windu
     # @return [Boolean] the valid boolean
     #
     def self.json_attr(val, attr_def:, attr_name: nil)
-      # check that the new val is not nil unless nil is OK
-      val = not_nil(val, attr_name: attr_name) unless attr_def[:nil_ok]
+      # check that the new val is not nil if its required
+      val = not_nil(val, attr_name: attr_name) if attr_def[:required]
 
       # if the new val is nil here, then nil is OK andd we shouldn't
       # check anything else
@@ -61,10 +60,6 @@ module Windu
 
       val =
         case attr_def[:class]
-
-        when Class
-          class_instance val, klass: attr_def[:class], attr_name: attr_name
-
         when :Boolean
           boolean val, attr_name: attr_name
 
@@ -82,6 +77,9 @@ module Windu
 
         when :Symbol
           symbol val, attr_name: attr_name
+
+        when :Time
+          time val, attr_name: attr_name
 
         else
           val
@@ -281,6 +279,22 @@ module Windu
       return val.to_sym if val.respond_to? :to_sym
 
       raise_invalid_data_error(msg || "#{attr_name} value must be a Symbol")
+    end
+
+    # Confirm that a value is a Time, or can be parsed into
+    #
+    # Return the  ISO8601 formatted String, or raise an error
+    #
+    # @param val [Time, #to_s] the value to validate
+    #
+    # @param msg [String] A custom error message when the value is invalid
+    #
+    # @return [Time] The Time
+    #
+    def self.time(val, attr_name: nil, msg: nil)
+      val.is_a?(Time) ? val : Time.parse(val.to_s)
+    rescue StandardError
+      raise_invalid_data_error(msg || "#{attr_name} value must be a Time, or a String to be used with Time.parse")
     end
 
     # Confirm that a value is a String
@@ -539,7 +553,8 @@ module Windu
       end
 
       unless new_object_class::CONTAINER_CLASS == container.class
-        raise Windu::InvalidDataError "The container for new #{new_object_class} objects must be a #{new_object_class::CONTAINER_CLASS} object"
+        raise Windu::InvalidDataError,
+              "The container for new #{new_object_class} objects must be a #{new_object_class::CONTAINER_CLASS} object"
       end
 
       container
