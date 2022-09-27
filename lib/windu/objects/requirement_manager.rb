@@ -47,7 +47,7 @@ module Windu
 
       # Titles without a requirement are not valid
       # so must be disabled
-      @container.disable if @criteria_array.empty?
+      @container.disable if @managed_array.empty?
 
       deleted_id
     end

@@ -50,23 +50,28 @@ module Windu
       patchId: {
         class: :Integer,
         identifier: :primary,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute softwareTitleId
       # @return [Integer] The id number of the title which uses this patch
       softwareTitleId: {
         class: :Integer,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute absoluteOrderId
       # @return [Integer] The zero-based position of this patch among
       #   all those used by the title. Should be identical to the Array index
       #   of this patch in the #patches attribute of the SoftwareTitle
-      #   instance that uses this patch
+      #   instance that uses this patch.
+      #   NOTE: This can only be changed via methods called on the
+      #   PatchManager that contains the patch.
       absoluteOrderId: {
-        class: :Integer
+        class: :Integer,
+        readonly: true
       },
 
       # @!attribute enabled
@@ -119,7 +124,8 @@ module Windu
       #   installing this patch
       killApps: {
         class: Windu::KillAppManager,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute components
@@ -127,7 +133,8 @@ module Windu
       #   NOTE: there can be only one!
       component: {
         class: Windu::Component,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute capabilities
@@ -135,7 +142,8 @@ module Windu
       #   computers capable of running, and thus installing, this patch.
       capabilities: {
         class: Windu::CapabilityManager,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       }
 
     }.freeze
@@ -169,6 +177,44 @@ module Windu
       return unless enabled?
 
       self.enabled = false
+    end
+
+    # Allow array managers to change the absoluteOrderId.
+    #
+    # @todo Only allow this to be called from a PatchManager.
+    #
+    # @param new_index [Integer] The new, zero-based index for this
+    #   criterion.
+    #
+    # @return [Integer] the id of the updated criterion
+    #
+    def absoluteOrderId=(new_index)
+      new_value = validate_attr :absoluteOrderId, new_index
+      return if new_value == @absoluteOrderId
+
+      @absoluteOrderId = new_value
+      update_on_server :absoluteOrderId
+    end
+
+    # Update the local absoluteOrderId without updating it on
+    # the server.
+    #
+    # Why??
+    #
+    # Because changing the value on the server for one criterion
+    # using #absoluteOrderId=  will automatically change it on the
+    # server for all the others.
+    #
+    # After changing one on the server and updating that one in the
+    # local array, the ArrayManager will use this, without
+    # updating the server, to change the value for all others in the
+    # array to match their array index.
+    #
+    # @todo Only allow this to be called from a PatchManager.
+    #
+    # @return [void]
+    def local_absoluteOrderId=(new_index)
+      @absoluteOrderId = new_index
     end
 
     # Private Instance Methods

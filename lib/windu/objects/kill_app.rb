@@ -49,7 +49,8 @@ module Windu
       killAppId: {
         class: :Integer,
         identifier: :primary,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute patchId
@@ -57,7 +58,8 @@ module Windu
       #   kill app
       patchId: {
         class: :Integer,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute bundleId

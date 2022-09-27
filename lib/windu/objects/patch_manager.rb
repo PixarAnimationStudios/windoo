@@ -33,6 +33,11 @@ module Windu
   #
   class PatchManager < Windu::BaseClasses::ArrayManager
 
+    # Constants
+    ####################################
+
+    MEMBER_CLASS = Windu::Patch
+
     # Public Instance Methods
     ####################################
 
@@ -86,10 +91,13 @@ module Windu
 
       # call the method from our superclass to add it to the array
       add_member new_patch, index: absoluteOrderId
+      update_local_absoluteOrderIds
       new_patch.primary_id
     end
 
     # Update a Patch in this SoftwareTitle.
+    # Do not use this to update absoluteOrderId, instead
+    # use #move_patch
     #
     # @param patchId [Integer] the id of the Patch to be updated.
     #
@@ -100,9 +108,29 @@ module Windu
     def update_patch(patchId, **attribs)
       patch = update_member(patchId, **attribs)
 
-      update_local_order criterion, index: attribs[:absoluteOrderId] if attribs[:absoluteOrderId]
+      if attribs[:absoluteOrderId]
+        move_member patch, index: patch.absoluteOrderId
+        update_local_absoluteOrderIds
+      end
 
       patch.patchId
+    end
+
+    # Change the position of an existing patch in the array
+    # This just calls update_patch, with absoluteOrderId as
+    # the only attribute.
+    #
+    # @param patchId [Integer] The patchId of the patch to update.
+    #
+    # @param absoluteOrderId [Integer] The zero-based position to which you want to
+    #   move the patch. So if you want to make it the third patch
+    #   in the list, use 2.
+    #
+    # @return [Integer] the new absoluteOrderId
+    #
+    def move_patch(patchId, absoluteOrderId:)
+      update_patch patchId, absoluteOrderId: absoluteOrderId
+      absoluteOrderId
     end
 
     # Delete a Patch from this SoftwareTitle
@@ -123,18 +151,24 @@ module Windu
       # so must be disabled
       patch.softwareTitle.disable if empty?
 
-      update_patch_order
+      update_local_absoluteOrderIds
 
       patchId
     end
 
     # Private Instance Methods
-    ################################
+    ####################################
     private
 
-    # Needed???
-    def update_local_patch_order
-      @managed_array.each_with_index { |p, i| p.absoluteOrderId = i unless p.absoluteOrderId == i }
+    # Update the local absoluteOrderId of Array members
+    # to match their array index, without updating the server
+    # cuz the server should have done it automatically
+    #
+    # @return [void]
+    def update_local_absoluteOrderIds
+      @managed_array.each_with_index do |patch, index|
+        patch.local_absoluteOrderId = index
+      end
     end
 
   end # class PatcheManager

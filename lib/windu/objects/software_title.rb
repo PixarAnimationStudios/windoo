@@ -226,8 +226,9 @@ module Windu
 
       # @attribute appName
       #   @return [String] Currently not used by the Title Editor.
-      #      the value is alwways nil, and there is no matching
-      #      data in the Web UI
+      #      the value is always nil, and there is no matching
+      #      data in the Web UI. These data exist in the killApps
+      #      associated with Patches
       # appName: {
       #   class: :String
       # },
@@ -235,7 +236,8 @@ module Windu
       # @attribute bundleId
       #   @return [String] Currently not used by the Title Editor.
       #      the value is alwways nil, and there is no matching
-      #      data in the Web UI
+      #      data in the Web UI. These data exist in the killApps
+      #      associated with Patches
       # bundleId: {
       #   class: :String
       # },
@@ -267,7 +269,8 @@ module Windu
 
         # attributes with this set to true are never
         # sent to the server when creating or updating
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute currentVersion
@@ -306,14 +309,16 @@ module Windu
       #     define which computers have the software installed.
       requirements: {
         class: Windu::RequirementManager,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute patches
       #   @return [Array<Windu::Patch>] The patches available for this title
       patches: {
         class: Windu::PatchManager,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute extensionAttributes
@@ -321,7 +326,8 @@ module Windu
       #     NOTE: See the module Windu::Mixins::SoftwareTitle::ExtentionAttribute
       extensionAttribute: {
         class: Windu::ExtensionAttribute,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       }
     }.freeze
 

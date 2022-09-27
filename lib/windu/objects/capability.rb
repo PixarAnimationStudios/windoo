@@ -54,14 +54,16 @@ module Windu
       capabilityId: {
         class: :Integer,
         identifier: :primary,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute patchId
       # @return [Integer] The id number of the Patch which uses this capability
       patchId: {
         class: :Integer,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       }
 
     }.freeze

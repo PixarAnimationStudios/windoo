@@ -50,14 +50,16 @@ module Windu
       criteriaId: {
         class: :Integer,
         identifier: :primary,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute componentId
       # @return [Integer] The id number of the component which uses this criterion
       componentId: {
         class: :Integer,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       }
 
     }.freeze

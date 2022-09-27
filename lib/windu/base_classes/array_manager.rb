@@ -27,23 +27,27 @@ module Windu
 
   module BaseClasses
 
-    # The common code for dealing with an array of sub-objects
-    # in Software Titles.
+    # The common code for dealing with a managed array of objects in
+    # Software Titles.
     #
-    # Array Managers manage an array of instances of API objects, preventing
-    # direct access to the array, but providing methods for adding, removing,
-    # and updating array members, while appropriating interacting with the
-    # API.
+    # Array Managers manage an Array of instances of API objects, preventing
+    # direct access to the Array, but providing methods for adding, removing,
+    # and updating array members, while appropriatly interacting with the
+    # API and maintaining consistency between the local Array and the server.
     #
     # Instances of subclasses of this class are held by API objects instead
     # of the raw Array.
     #
     # For example, SoftwareTitles have a #patches method, which is a list
     # of all the patches for the title.
+    #
     # The SoftwareTitle#patches method returns in instance of Windu::PatchManager,
     # a subclass of this class, which provides ways to add, update, and
     # delete patches from the title.
     #
+    # CAUTION: Do not instantiate (with .create) or delete members of the Array
+    # directly, use the `add_*` and `delete_` methods of the Array Manager, so
+    # that the local array automatically stays in sync with the server.
     #
     # Subclasses MUST define the constant MEMBER_CLASS
     # to indicate the class of the items we are managing
@@ -146,7 +150,7 @@ module Windu
 
       # Add a member to the array at a given position.
       #
-      # Subclasses should define a related method to create the new member
+      # Subclasses must define a related method to create the new member
       # object, then call this method to add it to the array, then do any
       # other processing needed after, e.g. returning some attribute of
       # the object.
@@ -169,10 +173,11 @@ module Windu
       # Update the details of an existing array member
       #
       # Subclasses should define a related method to do any kind of non-standard
-      # processing id needed, then call this method, perhaps after modifying the
+      # processing if needed, then call this method, perhaps after modifying the
       # given attribs hash.
-      # This method will then call the matching setter method, if available,
-      # for each item in the provided hash of attributes and new values.
+      #
+      # This method will then call the matching setter method for each attrib
+      # provided, if available, passing in the new value.
       #
       # Those setters may or may not update the server immediately.
       #
@@ -181,12 +186,15 @@ module Windu
       #   'requirementId', for an array of Windu::Patch, the value would
       #    be a 'patchId'.
       #
-      # @param attribs [Hash] Key=>value pairs for attributes to be updated.
-      #   Each key will be transformed into a setter method and send to the
+      # @param attribs [Hash] Key=>value pairs for attributes to be updated
+      #   and the new values to be applied.
+      #   Each key will be transformed into a setter method and sent to the
       #   object with the value as input to the setter.
-      #   If any special handling of an attrib is needed, the overriding
+      #
+      #   If any special handling of an attrib is needed, the calling
       #   method should deal with that and modify the attribs hash
       #   before passing them into this method via #super.
+      #
       #   NOTE: Explicit nils are sent!
       #
       #
@@ -210,7 +218,7 @@ module Windu
       # @param index [Integer] the new index for the member
       #
       # @return [void]
-      def update_local_order(member, index:)
+      def move_member(member, index:)
         curr_idx = @managed_array.index { |m| m == member }
 
         @managed_array.insert index, @managed_array.delete_at(curr_idx)

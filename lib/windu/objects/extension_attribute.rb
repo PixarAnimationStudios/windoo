@@ -74,14 +74,16 @@ module Windu
       extensionAttributeId: {
         class: :Integer,
         identifier: :primary,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute softwareTitleId
       # @return [Integer] The id number of the title which uses this extension attribute
       softwareTitleId: {
         class: :Integer,
-        do_not_send: true
+        do_not_send: true,
+        readonly: true
       },
 
       # @!attribute key

@@ -122,7 +122,7 @@ module Windu
             next
           end
 
-          Windu.load_msg "Creating getters and setters for attribute '#{attr_name}' of #{self}"
+          Windu.load_msg "Defining getters and setters for attribute '#{attr_name}' of #{self}"
 
           # there can be only one (primary ident)
           if attr_def[:identifier] == :primary
@@ -132,10 +132,10 @@ module Windu
           end
 
           # create getter unless the attr is write only
-          create_getters attr_name, attr_def unless attr_def[:writeonly]
+          define_getters attr_name, attr_def unless attr_def[:writeonly]
 
           # Don't crete setters for readonly attrs, or immutable objects
-          create_setters attr_name, attr_def if mutable? && !attr_def[:readonly]
+          define_setters attr_name, attr_def if mutable? && !attr_def[:readonly]
 
           json_attributes_parsed << attr_name
         end #  do |attr_name, attr_def|
@@ -179,23 +179,23 @@ module Windu
 
       # create a getter for an attribute, and any aliases needed
       ##############################
-      def self.create_getters(attr_name, attr_def)
-        Windu.load_msg "Creating getter method #{self}##{attr_name}"
+      def self.define_getters(attr_name, attr_def)
+        Windu.load_msg "..Defining getter method #{self}##{attr_name}"
 
         define_method(attr_name) { instance_variable_get("@#{attr_name}") }
 
         # all booleans get predicate ? aliases
         alias_method("#{attr_name}?", attr_name) if attr_def[:class] == :Boolean
       end # create getters
-      private_class_method :create_getters
+      private_class_method :define_getters
 
       # create setter for an attribute
       ##############################
-      def self.create_setters(attr_name, attr_def)
+      def self.define_setters(attr_name, attr_def)
         # readonly values don't get setters
         return if attr_def[:readonly]
 
-        Windu.load_msg "Creating setter method #{self}##{attr_name}="
+        Windu.load_msg "..Defining setter method #{self}##{attr_name}="
 
         define_method("#{attr_name}=") do |new_value|
           new_value = validate_attr attr_name, new_value
@@ -211,8 +211,8 @@ module Windu
 
           update_on_server attr_name
         end # define method
-      end # create_setters
-      private_class_method :create_setters
+      end # define_setters
+      private_class_method :define_setters
 
       ##############################
       # def self.create_array_setters(attr_name, attr_def)

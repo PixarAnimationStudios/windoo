@@ -29,16 +29,16 @@ module Windu
 
     # The base class for dealing with criteria in Software Titles.
     #
-    # Criteria are individual comparisons or 'filter rules' used singly or
-    # in ordered groups (stored in an Array) to identify matching computers,
-    # much as they are used for Jamf Smart Groups or Advanced Searches.
+    # WARNING: CRITERIA ARE IMMUTABLE. See below for how to deal
+    # with this
+    #
+    # Criteria are individual comparisons or 'filter rules' used  to
+    # identify matching computers, much as they are used for Jamf Smart
+    # Groups or Advanced Searches.
     #
     # For example, a single criterion might specify all computers where
     # the app 'FooBar.app' is installed. Another might specify that
     # FooBar.app is version 12.3.6, or that the OS is Big Sur or higher.
-    #
-    # The arrays are not directly accessible, but are managed by subclasses
-    # of Windu::CriteriaManager.
     #
     # In SoftwareTitles, criteria are used in three places:
     #
@@ -61,14 +61,32 @@ module Windu
     #   allowed to install, this Patch. Access to the Array is handled
     #   via the Windu::CapabilitytManager class.
     #
+    # This class is the superclass of the individual types of criteria
+    # used in the Title Editor. For example Windu::Requirement is a
+    # subclass of this class.
+    #
+    # Criteria always come in groups (perhaps a group of one) and are
+    # stored in Arrays. However, the arrays are not directly accessible,
+    # but are managed by subclasses of Windu::CriteriaManager. For
+    # example, the Windu::Requirement objects of a SoftwareTitle are stored
+    # in an instance of Windu::RequirementManager.
+    #
+    # These 'managers' provide methods for adding, replacing, moving,
+    # and deleting the individual criteria in the array, and maintain
+    # consistency between the local array and the actual objects stored
+    # on the server.
+    #
+    # CRITERIA ARE IMMUTABLE:
+    #
     # Criteria are immutable once created, mostly because to modify any of the
-    # primary values of one (name, operator, & value), you have to modify them all
-    # at once or the server will complain of possible mismatches, which can't be
-    # worked around when updating the values individually.
+    # primary values of one (name, operator, & value), you have to modify them
+    # all at once or you end up in a chicken/egg situation where the server will
+    # complain of invalid values, which can't easily  be worked around when
+    # updating the values individually.
     #
     # Instead of modifying one, delete it and replace it with a new one in the
-    # position in the array. There's a convenience method for this in the
-    # CriteriaManager subclass called #replace_criterion(id)
+    # same position in the array. There's a convenience method for this in the
+    # CriteriaManager called #replace_criterion(id)
     #
     # When creating criteria using CriteriaManager#add_criterion, they area added
     # to the end of the array by default, but you can specify the position using the
@@ -180,15 +198,42 @@ module Windu
         api_data
       end
 
-      # allow array managers to change the absoluteOrderId
-      # on the server
-      def absoluteOrderId=(_new_order)
-        new_value = validate_attr :absoluteOrderId, new_value
-        old_value = @absoluteOrderId
-        return if new_value == old_value
+      # Allow array managers to change the absoluteOrderId.
+      #
+      # @todo Only allow this to be called from a CriteriaManager.
+      #
+      # @param new_index [Integer] The new, zero-based index for this
+      #   criterion.
+      #
+      # @return [Integer] the id of the updated criterion
+      #
+      def absoluteOrderId=(new_index)
+        new_value = validate_attr :absoluteOrderId, new_index
+        return if new_value == @absoluteOrderId
 
         @absoluteOrderId = new_value
         update_on_server :absoluteOrderId
+      end
+
+      # Update the local absoluteOrderId without updating it on
+      # the server.
+      #
+      # Why??
+      #
+      # Because changing the value on the server for one criterion
+      # using #absoluteOrderId=  will automatically change it on the
+      # server for all the others.
+      #
+      # After changing one on the server and updating that one in the
+      # local array, the CriteriaManager will use this, without
+      # updating the server, to change the value for all others in the
+      # array to match their array index.
+      #
+      # @todo Only allow this to be called from a CriteriaManager.
+      #
+      # @return [void]
+      def local_absoluteOrderId=(new_index)
+        @absoluteOrderId = new_index
       end
 
     end # class Criterion
