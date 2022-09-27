@@ -33,20 +33,6 @@ module Windu
   #
   class PatchManager < Windu::BaseClasses::ArrayManager
 
-    # Constructor
-    ####################################
-
-    # @param data [Array<Hash>] A JSON array of hashes from the API
-    #   containing data the to construct one of these manager objects.
-    #
-    # @param container [Windu::SoftwareTitle] The title that
-    #   contains this array of Patches
-    #
-    def initialize(data, container:)
-      super
-      @patch_array = @managed_array
-    end
-
     # Public Instance Methods
     ####################################
 
@@ -114,10 +100,7 @@ module Windu
     def update_patch(patchId, **attribs)
       patch = update_member(patchId, **attribs)
 
-      if attribs[:absoluteOrderId]
-        update_local_order criterion, index: attribs[:absoluteOrderId]
-        update_patch_order
-      end
+      update_local_order criterion, index: attribs[:absoluteOrderId] if attribs[:absoluteOrderId]
 
       patch.patchId
     end
@@ -149,8 +132,9 @@ module Windu
     ################################
     private
 
-    def update_patch_order
-      @patch_array.each_with_index { |p, i| p.absoluteOrderId = i unless p.absoluteOrderId == i }
+    # Needed???
+    def update_local_patch_order
+      @managed_array.each_with_index { |p, i| p.absoluteOrderId = i unless p.absoluteOrderId == i }
     end
 
   end # class PatcheManager

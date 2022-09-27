@@ -30,20 +30,6 @@ module Windu
   #
   class KillAppManager < Windu::BaseClasses::ArrayManager
 
-    # Constructor
-    ####################################
-
-    # @param data [Array<Hash>] A JSON array of hashes from the API
-    #   containing data the to construct one of these manager objects.
-    #
-    # @param container [Windu::Patch] The Patch that
-    #   contains this array of KillApps
-    #
-    def initialize(data, container:)
-      super
-      @killApp_array = @managed_array
-    end
-
     # Public Instance Methods
     ####################################
 
@@ -99,17 +85,6 @@ module Windu
     def delete_killApp(id)
       delete_member(id)
       id
-    end
-
-    # Private Instance Methods
-    ##########################################
-    private
-
-    def killApp_by_id(killAppId)
-      killApp = @killApp_array.find { |k| k.killAppId == killAppId }
-      return killApp if killApp
-
-      raise Windu::NoSuchItemError, "No killApp with killAppId #{killApp} in this Patch"
     end
 
   end # module KillAppManager

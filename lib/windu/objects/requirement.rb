@@ -74,13 +74,6 @@ module Windu
       raise Windu::UnsupportedError, 'Requirements are fetched as part of the SoftwareTitle that contains them'
     end
 
-    # Constructor
-    ######################
-
-    def initialize(**init_data)
-      super
-    end
-
     # Private Instance Methods
     ##########################################
     private

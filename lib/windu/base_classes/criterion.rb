@@ -171,7 +171,7 @@ module Windu
       # Public Instance Methods
       ################################
 
-      # Override handle @and_or before saving
+      # Override handle @and_or before creating
       #
       def to_api
         api_data = super
@@ -180,16 +180,15 @@ module Windu
         api_data
       end
 
-      # method so that managers can set the absoluteOrderId
-      # after moving the criterion in the managed array
-      #
-      # @param index [Integer] the new absoluteOrderId
-      #   to send to the server
-      #
-      # @return [void]
-      #
-      def move_to_absoluteOrderId(index)
-        Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", { absoluteOrderId: index }.to_json
+      # allow array managers to change the absoluteOrderId
+      # on the server
+      def absoluteOrderId=(_new_order)
+        new_value = validate_attr :absoluteOrderId, new_value
+        old_value = @absoluteOrderId
+        return if new_value == old_value
+
+        @absoluteOrderId = new_value
+        update_on_server :absoluteOrderId
       end
 
     end # class Criterion

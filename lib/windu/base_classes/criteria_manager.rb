@@ -141,20 +141,6 @@ module Windu
         Windu.cnx.post 'valuelists/criteria/operators', { name: name }
       end
 
-      # Constructor
-      ####################################
-
-      # @param data [Array<Hash>] A JSON array of hashes from the API
-      #   containing data the to construct one of these manager objects.
-      #
-      # @param container [Object] the object that contains this managed
-      #   array of criteria
-      #
-      def initialize(data, container:)
-        super
-        @criteria_array = @managed_array
-      end
-
       # Public Instance Methods
       ####################################
 
@@ -190,7 +176,7 @@ module Windu
       # @return [Integer] The id of the new criterion
       #
       def add_criterion(name:, operator:, value:, type: 'recon', and_or: :and, absoluteOrderId: nil)
-        absoluteOrderId ||= @criteria_array.size
+        absoluteOrderId ||= @managed_array.size
 
         new_criterion = self.class::MEMBER_CLASS.create(
           container: container,
@@ -204,6 +190,7 @@ module Windu
 
         # call the method from our superclass to add it to the array
         add_member new_criterion, index: absoluteOrderId
+
         new_criterion.primary_id
       end
 

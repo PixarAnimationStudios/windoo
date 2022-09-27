@@ -124,9 +124,6 @@ module Windu
 
           Windu.load_msg "Creating getters and setters for attribute '#{attr_name}' of #{self}"
 
-          # TODO: Implement list-methods
-          # create_list_methods(attr_name, attr_def) if need_list_methods
-
           # there can be only one (primary ident)
           if attr_def[:identifier] == :primary
             raise Windu::UnsupportedError, 'Two identifiers marked as :primary' if @got_primary
@@ -138,7 +135,7 @@ module Windu
           create_getters attr_name, attr_def unless attr_def[:writeonly]
 
           # Don't crete setters for readonly attrs, or immutable objects
-          create_setters attr_name, attr_def unless attr_def[:readonly] || !mutable?
+          create_setters attr_name, attr_def if mutable? && !attr_def[:readonly]
 
           json_attributes_parsed << attr_name
         end #  do |attr_name, attr_def|
