@@ -313,7 +313,7 @@ module Windu
       #
       #
       # @return [Integer] the id of the updated item.
-      def update_on_server(attr_name, alt_value: nil)
+      def update_on_server(attr_name, new_value)
         # This may be nil if given an alt name for an alt value
         attr_def = self.class.json_attributes[attr_name]
 
@@ -321,11 +321,15 @@ module Windu
           raise Windu::UnsupportedError, "The value for #{attr_name} cannot be updated directly."
         end
 
-        # get the value, then convert if needed to API format
-        value_to_use = alt_value.nil? ? send(attr_name) : alt_value
-        value_to_use = Windu::Converters.send attr_def[:to_api], value_to_use.dup if attr_def&.dig attr_name, :to_api
+        # convert the value, if needed, to API format
+        value_to_send =
+          if attr_def&.dig attr_name, :to_api
+            Windu::Converters.send attr_def[:to_api], new_value.dup
+          else
+            new_value
+          end
 
-        json_to_put = { attr_name => value_to_use }.to_json
+        json_to_put = { attr_name => value_to_send }.to_json
 
         resp = Windu.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
         update_title_modify_time(resp)

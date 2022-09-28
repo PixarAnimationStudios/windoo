@@ -192,8 +192,8 @@ module Windu
       new_value = validate_attr :absoluteOrderId, new_index
       return if new_value == @absoluteOrderId
 
-      @absoluteOrderId = new_value
       update_on_server :absoluteOrderId
+      @absoluteOrderId = new_value
     end
 
     # Update the local absoluteOrderId without updating it on

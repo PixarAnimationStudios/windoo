@@ -134,14 +134,19 @@ module Windu
       alias count size
       alias length size
 
+      # Iterators - they have to use the
+      # frozen dup from to_a, since they
+      # might try to modify items as they
+      # iterate.
+
       # @return [Array]
       def each(&block)
-        @managed_array.each(&block)
+        to_a.each(&block)
       end
 
       # @return [Object]
       def find(if_none = nil, &block)
-        @managed_array.find if_none, &block
+        to_a.find if_none, &block
       end
 
       # Private Instance Methods

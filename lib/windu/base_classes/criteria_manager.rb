@@ -238,8 +238,27 @@ module Windu
           type: type.to_s,
           absoluteOrderId: victim.absoluteOrderId
         )
-        # no need to run update_local_absoluteOrderIds, we haven't changed the order,
-        # and it was called by add_criterion
+      # no need to run update_local_absoluteOrderIds, we haven't changed the order,
+      # and it was called by add_criterion
+
+      # Windu::ConnectionError should only come from the Add operation.
+      # The delete should give a Windu::NoSuchItemError if the id doesn't
+      # exist on the server.
+      rescue Windu::ConnectionError
+        # make sure the victim was really removed from the array
+        @managed_array.delete_if { |c| c.primary_id == victim.primary_id }
+
+        # then re-add the victim in the same position
+        add_criterion(
+          and_or: victim.and_or,
+          name: victim.name,
+          operator: victim.operator,
+          value: victim.value,
+          type: victim.type.to_s,
+          absoluteOrderId: victim.absoluteOrderId
+        )
+        # and re-raise the error
+        raise
       end
 
       # Change the position of an existing criterion in the array

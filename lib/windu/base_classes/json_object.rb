@@ -202,14 +202,13 @@ module Windu
           old_value = instance_variable_get("@#{attr_name}")
           return if new_value == old_value
 
+          # always update the server before the local
+          # value, so server errors will be raised first
+          # But only if this is a server object
+          # and
+          update_on_server(attr_name, new_value) if ok_to_send_to_server?(attr_name)
+
           instance_variable_set("@#{attr_name}", new_value)
-
-          # if this isn't a server object, we're done
-          return unless defined? self.class::RSRC_PATH
-          # of this value is 'do not send' we are done
-          return if attr_def[:do_not_send]
-
-          update_on_server attr_name
         end # define method
       end # define_setters
       private_class_method :define_setters
@@ -442,6 +441,13 @@ module Windu
       # Private Instance Methods
       #####################################
       private
+
+      # should an attribute be sent to the server when running the setter?
+      # Only if ts an APICollection, and the attribute is not do_not_send
+      def ok_to_send_to_server?(attr_name)
+        self.class.ancestors.include?(Windu::Mixins::APICollection) && \
+          !self.class.json_attributes.dig(attr_name, :do_not_send)
+      end
 
       # Initialize a multi-values attribute as an empty array
       # if it hasn't been created yet

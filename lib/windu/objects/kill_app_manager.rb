@@ -30,6 +30,11 @@ module Windu
   #
   class KillAppManager < Windu::BaseClasses::ArrayManager
 
+    # Constants
+    ##################################
+
+    MEMBER_CLASS = Windu::KillApp
+
     # Public Instance Methods
     ####################################
 
