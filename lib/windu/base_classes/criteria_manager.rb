@@ -241,11 +241,14 @@ module Windu
       # no need to run update_local_absoluteOrderIds, we haven't changed the order,
       # and it was called by add_criterion
 
-      # Windu::ConnectionError should only come from the Add operation.
+      # Windu::ConnectionError should only come from the Add operation,
+      # usually when one of the attributes given was a problem.
+      #
       # The delete should give a Windu::NoSuchItemError if the id doesn't
       # exist on the server.
       rescue Windu::ConnectionError
         # make sure the victim was really removed from the array
+        # It should have been by the delete_member call above,
         @managed_array.delete_if { |c| c.primary_id == victim.primary_id }
 
         # then re-add the victim in the same position
@@ -273,9 +276,14 @@ module Windu
       # @return [Integer] the new absoluteOrderId
       #
       def move_criterion(id, absoluteOrderId:)
+        # do it on the server first, to raise potential errs before
+        # modifying the array
         criterion = update_member id, absoluteOrderId: absoluteOrderId
+
+        # now modify the array
         move_member criterion, index: criterion.absoluteOrderId
         update_local_absoluteOrderIds
+
         absoluteOrderId
       end
 

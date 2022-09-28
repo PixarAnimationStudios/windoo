@@ -88,8 +88,7 @@ module Windu
     # @return [Integer] The id of the deleted killApp
     #
     def delete_killApp(id)
-      delete_member(id)
-      id
+      delete_member(id).deleted_id
     end
 
   end # module KillAppManager

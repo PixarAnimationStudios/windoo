@@ -32,25 +32,33 @@ module Windu
     #
     # Array Managers manage an Array of instances of API objects, preventing
     # direct access to the Array, but providing methods for adding, removing,
-    # and updating array members, while appropriatly interacting with the
+    # updating, and moving array members, while appropriatly interacting with the
     # API and maintaining consistency between the local Array and the server.
+    #
+    # This base class provides management of the actual Array, and doesn't
+    # intentionally communicate with the server at all. However, it
+    # may cause server interaction when calling methods on the objects held
+    # in the Array.
     #
     # Instances of subclasses of this class are held by API objects instead
     # of the raw Array.
     #
     # For example, SoftwareTitles have a #patches method, which is a list
-    # of all the patches for the title.
+    # of all the patches for the title. In the raw API data Hash, the :patches
+    # key contains an array of hashes of patch data.
     #
-    # The SoftwareTitle#patches method returns in instance of Windu::PatchManager,
-    # a subclass of this class, which provides ways to add, update, and
-    # delete patches from the title.
+    # However, the SoftwareTitle#patches method does not return an Array.
+    # Intead it returns an instance of Windu::PatchManager, a subclass of this class,
+    # which provides ways to add, update, and delete patches from the title.
     #
     # CAUTION: Do not instantiate (with .create) or delete members of the Array
     # directly, use the `add_*` and `delete_` methods of the Array Manager, so
     # that the local array automatically stays in sync with the server.
     #
-    # Subclasses MUST define the constant MEMBER_CLASS
-    # to indicate the class of the items we are managing
+    # TODO: Prevent instantiation of those objects outside of approved methods.
+    #
+    # Subclasses MUST define the constant MEMBER_CLASS to indicate the class of
+    # the items we are managing
     #
     class ArrayManager
 
@@ -144,9 +152,16 @@ module Windu
         to_a.each(&block)
       end
 
-      # @return [Object]
+      # @return [Object, nil]
       def find(if_none = nil, &block)
         to_a.find if_none, &block
+      end
+
+      # @return [Integer, nil]
+      def index(obj = nil, &block)
+        return to_a.index(obj) if obj
+
+        to_a.index(&block)
       end
 
       # Private Instance Methods
@@ -161,7 +176,9 @@ module Windu
       # the object.
       #
       # NOTE: This method does not communicate with the server. You must add
-      # the object to the server in whatever method calls this one.
+      # the object to the server in whatever method calls this one, preferably
+      # before calling this one, so that any server errors are raised before
+      # we insert the object into the array.
       #
       # @param new_member [Object] the object to be added to the array
       #
@@ -216,7 +233,8 @@ module Windu
         member
       end
 
-      # Move a member to a new location in the array
+      # Move a member to a new location in the array. This
+      # does not talk to the server
       #
       # @param member [Object] the member to move
       #
@@ -230,10 +248,10 @@ module Windu
       end
 
       # Delete a member of the array.
-      # This method will delete the object from the array, and then call the
-      # objects #delete method, if it has one.
       #
-      # Such a #delete method may or may not delete it from the server immediatley.
+      # This method will call the object's #delete method, if it has one,
+      # which may delete it from the server. It will then delete it from
+      # the local array
       #
       # Subclasses should define a related method that calls this one, doing
       # any processing before or after
@@ -248,11 +266,11 @@ module Windu
       def delete_member(id)
         member = member_by_id(id)
 
-        # delete from the array and return it
-        @managed_array.delete member
-
         # call its delete method, which may delete it from the server
         member.delete if member.respond_to? :delete
+
+        # delete from the array
+        @managed_array.delete member
 
         member
       end

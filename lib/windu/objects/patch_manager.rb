@@ -92,7 +92,7 @@ module Windu
       # call the method from our superclass to add it to the array
       add_member new_patch, index: absoluteOrderId
       update_local_absoluteOrderIds
-      new_patch.primary_id
+      new_patch.patchId
     end
 
     # Update a Patch in this SoftwareTitle.
@@ -106,6 +106,11 @@ module Windu
     # @return [Integer] The id of the updated Patch
     #
     def update_patch(patchId, **attribs)
+      # TODO: use this to undo if we changed
+      # the absoluteOrderId but something about the
+      # API transaction failed
+      orig_idx = @managed_array.index { |p| p.patchId == patchId }
+
       patch = update_member(patchId, **attribs)
 
       if attribs[:absoluteOrderId]

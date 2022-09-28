@@ -443,7 +443,7 @@ module Windu
       private
 
       # should an attribute be sent to the server when running the setter?
-      # Only if ts an APICollection, and the attribute is not do_not_send
+      # Only if its an APICollection, and the attribute is not 'do_not_send'
       def ok_to_send_to_server?(attr_name)
         self.class.ancestors.include?(Windu::Mixins::APICollection) && \
           !self.class.json_attributes.dig(attr_name, :do_not_send)
