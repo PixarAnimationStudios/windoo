@@ -44,16 +44,19 @@ module Windu
     #
     # - Windu::Requirement objects which is a subclass of Windu::BaseClasses::Criterion
     #
-    # - Windu::SoftwareTitle#requirements should return a single Windu::Requirements object
+    # - Windu::SoftwareTitle#requirements should return a single Windu::RequirementManager object
     #   and you can then use it like this
     #      title = Windu::SoftwareTitle.fetch 'mytitle'
-    #      title.requirements.all
+    #      title.requirements.to_a
     #      # => the readonly Array of Windu::Requirement objects
+    #
     #      title.requirements.add_criterion(options: here)
     #      # => add a new Windu::Requirement to the Array
-    #      title.requirements.update_criterion(options: here)
-    #      # => update an existing Windu::Requirement in the Array
-    #      title.requirements.delete_criterion(options: here)
+    #
+    #      title.requirements.replace_criterion(victim_id, options: here)
+    #      # => replace an existing Windu::Requirement in the Array
+    #
+    #      title.requirements.delete_criterion(victim_id)
     #      # => delete an existing Windu::Requirement from the Array
     #
     #
@@ -63,17 +66,22 @@ module Windu
     #
     # - Windu::Capability objects which is a subclass of Windu::BaseClasses::Criterion
     #
-    # - Windu::Patch#capabilities should return a single Windu::Capabilities object
+    # - Windu::Patch#capabilities should return a single Windu::CapabilityManager object
     #   and you can then use it like this
     #      title = Windu::SoftwareTitle.fetch 'mytitle'
     #      a_patch = title.patches.first
-    #      a_patch.capabilities.all
+    #      # => a single patch
+    #
+    #      a_patch.capabilities.to_a
     #      # => the readonly Array of Windu::Capability objects
+    #
     #      a_patch.capabilities.add_criterion(options: here)
     #      # => add a new Windu::Capability to the patch
-    #      a_patch.capabilities.update_criterion(options: here)
-    #      # => update an existing Windu::Capability in the patch
-    #      a_patch.capabilities.delete_criterion(options: here)
+    #
+    #      a_patch.capabilities.replace_criterion(victim_id, options: here)
+    #      # => replace an existing Windu::Capability in the patch
+    #
+    #      a_patch.capabilities.delete_criterion(victim_id)
     #      # => delete an existing Windu::Capability from the patch
     #
     #
@@ -83,20 +91,23 @@ module Windu
     #
     # - Windu::ComponentCriterion objects which is a subclass of Windu::BaseClasses::Criterion
     #
-    # - Windu::Component#criteria should return a single Windu::ComponentCriteria object
+    # - Windu::Component#criteria should return a single Windu::ComponentCriteriaManager object
     #   and you can then use it like this
     #      title = Windu::SoftwareTitle.fetch 'mytitle'
     #      a_patch = title.patches.first
     #      component = a_patch.component
-    #      component.criteria
-    #      # => a Windu::ComponentCriteria object
-    #      component.criteria.all
+    #      # => the component of a patch
+    #
+    #      component.criteria.to_a
     #      # => the readonly Array of Windu::ComponentCriterion objects
+    #
     #      component.criteria.add_criterion(options: here)
     #      # => add a new Windu::ComponentCriterion to the component
-    #      component.capabilities.update_criterion(options: here)
-    #      # => update an existing Windu::ComponentCriterion in the component
-    #      component.capabilities.delete_criterion(options: here)
+    #
+    #      component.capabilities.replace_criterion(victim_id, options: here)
+    #      # => replace an existing Windu::ComponentCriterion in the component
+    #
+    #      component.capabilities.delete_criterion(victim_id)
     #      # => delete an existing Windu::ComponentCriterion from the component
     #
     #
