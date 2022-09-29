@@ -112,8 +112,8 @@ module Windu
         # @param init_data [Hasn] The attributes of the new item as keyword
         #   arguments. Some may be required.
         #
-        # @return [Object] A new instance of the class, not yet saved
-        #   to the server. To save it use the #save instance method.
+        # @return [Object] A new instance of the class, already saved
+        #   to the server.
         ####
         def create(container: nil, **init_data)
           container = Windu::Validate.container_for_new_object(

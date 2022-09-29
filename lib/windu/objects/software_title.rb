@@ -361,12 +361,13 @@ module Windu
     def enable
       return if enabled?
 
-      if requirements.empty? || patches.empty?
+      if requirements.empty? || patches.all_enabled.empty?
         raise Windu::MissingDataError,
-              'SoftwareTitles must have at least one requirement and one patch before they can be enabled'
+              'SoftwareTitles must have at least one requirement and one enabled patch before they can be enabled'
       end
 
       self.enabled = true
+      :enabled
     end
 
     # Disable this SoftwareTitle
@@ -374,6 +375,7 @@ module Windu
       return unless enabled?
 
       self.enabled = false
+      :disabled
     end
 
     # Update our modification timestamp from other objects

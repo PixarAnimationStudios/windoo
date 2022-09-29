@@ -41,6 +41,19 @@ module Windu
     # Public Instance Methods
     ####################################
 
+    # @return [Array<Windu::Patch] An array of the currently enabled patches
+    #
+    def all_enabled
+      @managed_array.select(&:enabled?)
+    end
+
+    # @return [Hash {Integer => String}] The Patch IDs => Version installed
+    #   by the patch.
+    #
+    def patchIds_to_versions
+      @managed_array.map { |p| [p.patchId, p.version] }.to_h
+    end
+
     # Add a Patch to this SoftwareTitle. NOTE: patches cannot be
     # enabled when added, you must call 'enable' on them after creating
     # any necessary sub-objects.
@@ -95,6 +108,19 @@ module Windu
       new_patch.patchId
     end
 
+    # TODO: implement cloning? The clone resource
+    # just creates a bare one with no killApps, component or
+    # capabilities. So not sure its much of a win
+    # over doing it in ruby.
+    #
+    # def clone_patch(_patchId, new_version:)
+    #   source_id = title.patches[-1].patchId
+    #   new_version = '0.0.1a1'
+    #   clone_url = "#{Windu::Patch::RSRC_PATH}/#{source_id}/clone"
+    #   data = Windu.cnx.post clone_url, {version: new_version }.to_json
+    #   newpatch = Windu::Patch.new **data
+    # end
+
     # Update a Patch in this SoftwareTitle.
     # Do not use this to update absoluteOrderId, instead
     # use #move_patch
@@ -134,6 +160,13 @@ module Windu
     # @return [Integer] the new absoluteOrderId
     #
     def move_patch(patchId, absoluteOrderId:)
+      # Can't move it beyond the end of the array....
+      max_idx = @managed_array.size - 1
+      absoluteOrderId = max_idx if absoluteOrderId > max_idx
+
+      # ... or before the beginning
+      absoluteOrderId = 0 if absoluteOrderId.negative?
+
       update_patch patchId, absoluteOrderId: absoluteOrderId
       absoluteOrderId
     end

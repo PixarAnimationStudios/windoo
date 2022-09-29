@@ -66,7 +66,7 @@ module Windu
 
     # See the section 'REQUIRED ITEMS WHEN MIXING IN'
     # in the APICollection mixin.
-    def handle_create_response(post_response)
+    def handle_create_response(post_response, container_id: nil)
       @criteriaId = post_response[:criteriaId]
       @componentId = post_response[:componentId]
       @componentId

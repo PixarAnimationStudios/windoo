@@ -276,12 +276,19 @@ module Windu
       # @return [Integer] the new absoluteOrderId
       #
       def move_criterion(id, absoluteOrderId:)
+        # Can't move it beyond the end of the array....
+        max_idx = @managed_array.size - 1
+        absoluteOrderId = max_idx if absoluteOrderId > max_idx
+
+        # ... or before the beginning
+        absoluteOrderId = 0 if absoluteOrderId.negative?
+
         # do it on the server first, to raise potential errs before
         # modifying the array
         criterion = update_member id, absoluteOrderId: absoluteOrderId
 
         # now modify the array
-        move_member criterion, index: criterion.absoluteOrderId
+        move_member criterion, index: absoluteOrderId
         update_local_absoluteOrderIds
 
         absoluteOrderId
@@ -311,6 +318,8 @@ module Windu
       # @return [void]
       def update_local_absoluteOrderIds
         @managed_array.each_with_index do |criterion, index|
+          next unless criterion
+
           criterion.local_absoluteOrderId = index
         end
       end

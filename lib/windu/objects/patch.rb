@@ -164,12 +164,18 @@ module Windu
     def enable
       return if enabled?
 
-      if capabilities.empty? || component.nil?
+      if capabilities.empty? || component.nil? || component.criteria.empty?
         raise Windu::MissingDataError,
-              'Patches must have a defined component and at lease one capability before they can be enabled'
+              'Patches must have at least one capability, and a component with at least one criterion, before they can be enabled'
       end
 
       self.enabled = true
+
+      # Update the currentVersion of our title to this version if this patch is the
+      # newest enabled patch
+      container.currentVersion = version if container.patches.all_enabled.first == self
+
+      :enabled
     end
 
     # Disable this Patch
@@ -177,6 +183,7 @@ module Windu
       return unless enabled?
 
       self.enabled = false
+      :disabled
     end
 
     # Allow array managers to change the absoluteOrderId.
@@ -192,7 +199,7 @@ module Windu
       new_value = validate_attr :absoluteOrderId, new_index
       return if new_value == @absoluteOrderId
 
-      update_on_server :absoluteOrderId
+      update_on_server :absoluteOrderId, new_value
       @absoluteOrderId = new_value
     end
 

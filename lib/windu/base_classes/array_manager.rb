@@ -157,6 +157,14 @@ module Windu
         to_a.find if_none, &block
       end
 
+      # @return [Object, nil]
+      def find_by_attr(attr_name, value)
+        return if empty?
+        return unless @managed_array.first.respond_to? attr_name
+
+        @managed_array.find {|i| i.send(attr_name) == value }
+      end
+
       # @return [Integer, nil]
       def index(obj = nil, &block)
         return to_a.index(obj) if obj
