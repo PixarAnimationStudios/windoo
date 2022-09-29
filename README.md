@@ -28,7 +28,7 @@ Windu.connect url, pw: :prompt
 # So to work with Requirements, Patches, KillApps, ExtensionAttributes, etc... you must
 # fetch or create the SoftwareTitle that they are a part of.
 
-# Create a SoftwareTitle. This happens immediately on the
+# Create a SoftwareTitle. This happens immediately on the server
 test_title = Windu::SoftwareTitle.create(
   id: 'com.mycompany.windu.test-0-rama',
   name: 'Windu Test Oh Rama',
