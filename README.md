@@ -22,6 +22,7 @@ Usage:
 require 'windu'
 
 #### CONNECT
+#####################################
 url = 'https://mylogin@a1b2c3d4.appcatalog.jamfcloud.com'
 
 # Connect the default connection.
@@ -214,6 +215,6 @@ patch.enable
 # Once your software title has at least on Requirement, and one enabled Patch, you can
 # enable it too!
 title.enable
-
 ```
+
 More documentation is on the way
