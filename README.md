@@ -1,6 +1,6 @@
 # Windu - a colleague of Kenobi
 
-Windu provides a Ruby interface to the REST API of the Jamf Title Editor, formerly known as 'Kinobi'.
+Windu provides a Ruby interface to the REST API of the [Jamf Title Editor](https://docs.jamf.com/title-editor/documentation/About_Title_Editor.html), formerly known as 'Kinobi'.
 
 It works very much like [ruby-jss](http://pixaranimationstudios.github.io/ruby-jss/index.html), with a huge, important difference:
 
