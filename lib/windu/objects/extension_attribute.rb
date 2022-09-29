@@ -25,15 +25,17 @@
 module Windu
 
   # The class for dealing with Software Title ExtensionAttributes in the
-  # TitleEditor
+  # TitleEditor.
   #
-  # NOTE: All interaction with these should usually be via the
-  # SoftwareTitle instance methods:
+  # NOTE: Do not create or delete instances of this class directly.
+  # use:
   #
-  #   SoftwareTitle#extensionAttribute
-  #   SoftwareTitle#add_extensionAttribute
-  #   SoftwareTitle#update_extensionAttribute
-  #   SoftwareTitle#delete_extensionAttribute
+  #   - SoftwareTitle#add_extensionAttribute
+  #     - From {SoftwareTitle#add_extensionAttribute}
+  # and
+  #
+  #   - SoftwareTitle#delete_extensionAttribute
+  #     - From {SoftwareTitle#delete_extensionAttribute}
   #
   class ExtensionAttribute < Windu::BaseClasses::JSONObject
 

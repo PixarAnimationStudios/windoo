@@ -25,9 +25,10 @@
 
 module Windu
 
-  # Methods to mix in to the Patch class,
-  # relating to KillApps
+  # An {Windu::BaseClasses::ArrayManager ArrayManager} for dealing with the
+  # {Windu::KillApp KillApps} of a {Windu::Patch Patch}
   #
+  # An instance of this is returned by {Patch#killApps}
   class KillAppManager < Windu::BaseClasses::ArrayManager
 
     # Constants

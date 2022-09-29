@@ -25,11 +25,10 @@
 
 module Windu
 
-  # An object that manages the array of Patches in a
-  # SoftwareTitle.
+  # An {Windu::BaseClasses::ArrayManager ArrayManager} for dealing with the
+  # {Windu::Patch Patches} of a {Windu::SoftwareTitle SoftwareTitle}
   #
-  # This object is returned by SoftwareTitle.patches
-  #
+  # An instance of this is returned by {SoftwareTitle#patches}
   #
   class PatchManager < Windu::BaseClasses::ArrayManager
 

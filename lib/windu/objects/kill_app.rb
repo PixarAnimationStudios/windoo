@@ -25,6 +25,12 @@
 
 module Windu
 
+  # A class representing an Application that cannot be running when
+  # a Patch is installed.
+  #
+  # Patches can contain any number of these, and they are accessed using
+  # a {Windu::KillAppManager} available from the {Patch#killApps} method.
+  #
   class KillApp < Windu::BaseClasses::JSONObject
 
     # Mixins

@@ -25,10 +25,11 @@
 
 module Windu
 
-  # The class for dealing with the Array of Software Title Requirements in the
-  # TitleEditor
+  # A {Windu::BaseClasses::CriteriaManager CriteriaManager} for dealing with the
+  # {Windu::Capability Capabilities} of a {Windu::Patch Patch}
   #
-  # @see Windu::BaseClasses::CriteriaManager
+  # An instance of this is returned by {Patch#capabilities}
+  #
   class CapabilityManager < Windu::BaseClasses::CriteriaManager
 
     # Constants

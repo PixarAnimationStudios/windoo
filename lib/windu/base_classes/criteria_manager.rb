@@ -31,88 +31,81 @@ module Windu
     # in Software Titles.
     #
     # This class manages an array of instances of subclasses of
-    # Windu::BaseClasses::Criterion
+    # {Windu::BaseClasses::Criterion Windu::BaseClasses::Criterion}
+    #
+    # See also: {Windu::BaseClasses::ArrayManager Windu::BaseClasses::ArrayManager}
+    # for info about managed Arrays.
     #
     # This class should be the superclass of classes representing
-    # the three ways Criteria are used in a SoftwareTitle.
+    # the three ways Criteria are used in a {SoftwareTitle}.
     #
-    # Here's how that looks....
+    # - SoftwareTitles have 'requirements'
+    #   - These are criteria defining which computers have any version of the title installed.
+    # - {Patch Patches} within SoftwareTitles have 'capabilities'
+    #   - These are criteria defining which computers are capable of installing/running the patch.
+    # - A Patch's '{Component component}' has a set of 'criteria'
+    #   - These are criteria defining which comptuers have _this_ version of the title installed.
     #
-    # - Windu::RequirementManager should be a subclass of this class, and must define
-    #   the constant MEMBER_CLASS = Windu::Requirement
-    #   indicating that it should manage an array of...
+    # Here's how that looks for requirements:
     #
-    # - Windu::Requirement objects which is a subclass of Windu::BaseClasses::Criterion
+    #   - {Windu::RequirementManager Windu::RequirementManager} should be a subclass of this class, and must define<br/>
+    #     the constant `MEMBER_CLASS = Windu::Requirement` indicating that it should manage an array of...
+    #   - {Windu::Requirement Windu::Requirement} objects which is a subclass of {Windu::BaseClasses::Criterion}
+    #   - {Windu::SoftwareTitle#requirements} should return a single {Windu::RequirementManager Windu::RequirementManager} object
     #
-    # - Windu::SoftwareTitle#requirements should return a single Windu::RequirementManager object
-    #   and you can then use it like this
-    #      title = Windu::SoftwareTitle.fetch 'mytitle'
-    #      title.requirements.to_a
-    #      # => the readonly Array of Windu::Requirement objects
+    # Here's how to use a {Windu::RequirementManager Windu::RequirementManager}:
     #
-    #      title.requirements.add_criterion(options: here)
-    #      # => add a new Windu::Requirement to the Array
+    #     title = Windu::SoftwareTitle.fetch 'mytitle'
+    #     title.requirements.to_a
+    #     # => the readonly Array of Windu::Requirement objects
     #
-    #      title.requirements.replace_criterion(victim_id, options: here)
-    #      # => replace an existing Windu::Requirement in the Array
+    #     title.requirements.add_criterion(options: here)
+    #     # => add a new Windu::Requirement to the Array
     #
-    #      title.requirements.delete_criterion(victim_id)
-    #      # => delete an existing Windu::Requirement from the Array
+    #     title.requirements.replace_criterion(victim_id, options: here)
+    #     # => replace an existing Windu::Requirement in the Array
     #
+    #     title.requirements.delete_criterion(victim_id)
+    #     # => delete an existing Windu::Requirement from the Array
     #
-    # - Windu::CapabilityManager should be a subclass of this class, and must define
-    #   the constant MEMBER_CLASS = Windu::Capability
-    #   indicating that it should manage an array of...
+    # The other CriteriaManagers work the same way, they are just located in their respective places:
     #
-    # - Windu::Capability objects which is a subclass of Windu::BaseClasses::Criterion
+    #     # Patch Capabilities
     #
-    # - Windu::Patch#capabilities should return a single Windu::CapabilityManager object
-    #   and you can then use it like this
-    #      title = Windu::SoftwareTitle.fetch 'mytitle'
-    #      a_patch = title.patches.first
-    #      # => a single patch
+    #     patch = title.patches.first
+    #     # => a single patch
     #
-    #      a_patch.capabilities.to_a
-    #      # => the readonly Array of Windu::Capability objects
+    #     patch.capabilities.to_a
+    #     # => the readonly Array of Windu::Capability objects
     #
-    #      a_patch.capabilities.add_criterion(options: here)
-    #      # => add a new Windu::Capability to the patch
+    #     patch.capabilities.add_criterion(options: here)
+    #     # => add a new Windu::Capability to the patch
     #
-    #      a_patch.capabilities.replace_criterion(victim_id, options: here)
-    #      # => replace an existing Windu::Capability in the patch
+    #     patch.capabilities.replace_criterion(victim_id, options: here)
+    #     # => replace an existing Windu::Capability in the patch
     #
-    #      a_patch.capabilities.delete_criterion(victim_id)
-    #      # => delete an existing Windu::Capability from the patch
+    #     patch.capabilities.delete_criterion(victim_id)
+    #     # => delete an existing Windu::Capability from the patch
     #
+    #     # Patch Component Criteria
     #
-    # - Windu::ComponentCriteriaManager should be a subclass of this class, and must
-    #   define the constant MEMBER_CLASS = Windu::ComponentCriterion
-    #   indicating that it should manage an array of...
+    #     component = patch.component
+    #     # => the component of a patch
     #
-    # - Windu::ComponentCriterion objects which is a subclass of Windu::BaseClasses::Criterion
+    #     component.criteria.to_a
+    #     # => the readonly Array of Windu::ComponentCriterion objects
     #
-    # - Windu::Component#criteria should return a single Windu::ComponentCriteriaManager object
-    #   and you can then use it like this
-    #      title = Windu::SoftwareTitle.fetch 'mytitle'
-    #      a_patch = title.patches.first
-    #      component = a_patch.component
-    #      # => the component of a patch
+    #     component.criteria.add_criterion(options: here)
+    #     # => add a new Windu::ComponentCriterion to the component
     #
-    #      component.criteria.to_a
-    #      # => the readonly Array of Windu::ComponentCriterion objects
+    #     component.criteria.replace_criterion(victim_id, options: here)
+    #     # => replace an existing Windu::ComponentCriterion in the component
     #
-    #      component.criteria.add_criterion(options: here)
-    #      # => add a new Windu::ComponentCriterion to the component
-    #
-    #      component.capabilities.replace_criterion(victim_id, options: here)
-    #      # => replace an existing Windu::ComponentCriterion in the component
-    #
-    #      component.capabilities.delete_criterion(victim_id)
-    #      # => delete an existing Windu::ComponentCriterion from the component
+    #     component.criteria.delete_criterion(victim_id)
+    #     # => delete an existing Windu::ComponentCriterion from the component
     #
     #
-    # Subclasses MUST define the constant MEMBER_CLASS
-    # to indicate the class of the items we are managing
+    # Subclasses MUST define the constant MEMBER_CLASS to indicate the class of the items we are managing
     #
     class CriteriaManager < Windu::BaseClasses::ArrayManager
 

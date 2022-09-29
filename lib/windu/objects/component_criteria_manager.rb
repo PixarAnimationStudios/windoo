@@ -25,10 +25,12 @@
 
 module Windu
 
-  # The class for dealing with the Array of Software Title Requirements in the
-  # TitleEditor
+  # A {Windu::BaseClasses::CriteriaManager CriteriaManager} for dealing with the
+  # {Windu::CompnentCriterion CompnentCriteria} of a {Windu::Component Component}
+  # of a {Windu::Patch Patch}
   #
-  # @see Windu::BaseClasses::CriteriaManager
+  # An instance of this is returned by {Component#criteria}
+  #
   class ComponentCriteriaManager < Windu::BaseClasses::CriteriaManager
 
     # Constants
