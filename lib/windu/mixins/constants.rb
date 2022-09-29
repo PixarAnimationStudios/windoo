@@ -19,33 +19,42 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
-#
 
 # frozen_string_literal: true
 
 module Windu
 
-  module Loading
+  # When using included modules to define constants,
+  # the constants have to be defined at the level where they will be
+  # referenced, or else they
+  # aren't available to other broken-out-and-included sub modules
+  #
+  # See https://cultivatehq.com/posts/ruby-constant-resolution/ for
+  # an explanation
 
-    def self.extended(extender)
-      Windu.verbose_extend extender, self
-    end
+  # The minimum Ruby version needed for ruby-jss
+  MINIMUM_RUBY_VERSION = '2.6.3'
 
-    # Use the load_msg method defined for Zeitwerk
-    def load_msg(msg)
-      WinduZeitwerkConfig.load_msg msg
-    end
+  # These are handy for testing values without making new arrays, strings, etc every time.
+  TRUE_FALSE = [true, false].freeze
 
-    # Mention that a module is being included into something
-    def verbose_include(includer, includee)
-      load_msg "--> #{includer} is including #{includee}"
-    end
+  # Empty strings are used in various places
+  BLANK = ''
 
-    # Mention that a module is being extended into something
-    def verbose_extend(extender, extendee)
-      load_msg "--> #{extender} is extending #{extendee}"
-    end
+  module Mixins
 
-  end # module Loading
+    # Constants useful throughout Windu
+    # This should be included into the Jamf module
+    #####################################
+    module Constants
+
+      # when this module is included, also extend our Class Methods
+      def self.included(includer)
+        Windu.load_msg "--> #{includer} is including Windu::Constants"
+      end
+
+    end # module constants
+
+  end #  module Mixins
 
 end # module Windu

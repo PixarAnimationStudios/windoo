@@ -28,7 +28,7 @@
 require 'English'
 require 'time'
 
-# Load other gems
+# Other gems
 ######
 require 'pixar-ruby-extensions'
 require 'faraday' # >= 0.17.0
@@ -38,8 +38,7 @@ require 'faraday_middleware' # >= 0.13.0
 ######
 
 # Configure the Zeitwerk loader, See https://github.com/fxn/zeitwerk
-# This also defines other Windu module methods related to loading
-#
+# This also defines other methods related to loading
 require 'windu/zeitwerk_config'
 
 # the `Zeitwerk::Loader.for_gem` creates the loader object, and must
@@ -50,16 +49,19 @@ require 'windu/zeitwerk_config'
 # defines the Windu:: module namespace!
 WinduZeitwerkConfig.setup_zeitwerk_loader Zeitwerk::Loader.for_gem
 
-# Load windu stuff here that we don't autoload
+# Zeitwerk
+######
+
+# Load windu stuff here that we don't autoload with zeitwerk
 require 'windu/exceptions'
 
 # The main module
 module Windu
 
-  extend Windu::Loading
-  include Windu::Constants
-  extend Windu::Utility
-  extend Windu::DefaultConnection
+  extend Windu::Mixins::Loading
+  include Windu::Mixins::Constants
+  extend Windu::Mixins::Utility
+  extend Windu::Mixins::DefaultConnection
 
   # the single instance of our configuration object
   def self.config

@@ -24,33 +24,17 @@
 
 module Windu
 
-  # When using included modules to define constants,
-  # the constants have to be defined at the level where they will be
-  # referenced, or else they
-  # aren't available to other broken-out-and-included sub modules
-  #
-  # See https://cultivatehq.com/posts/ruby-constant-resolution/ for
-  # an explanation
+  module Mixins
 
-  # The minimum Ruby version needed for ruby-jss
-  MINIMUM_RUBY_VERSION = '2.6.3'
+    # This should be extended into the Windu module
+    module Utility
 
-  # These are handy for testing values without making new arrays, strings, etc every time.
-  TRUE_FALSE = [true, false].freeze
+      def self.extended(extender)
+        Windu.verbose_extend extender, self
+      end
 
-  # Empty strings are used in various places
-  BLANK = ''
+    end # Utility
 
-  # Constants useful throughout Windu
-  # This should be included into the Jamf module
-  #####################################
-  module Constants
+  end #  module Mixins
 
-    # when this module is included, also extend our Class Methods
-    def self.included(includer)
-      Windu.load_msg "--> #{includer} is including Windu::Constants"
-    end
-
-  end # module constants
-
-end # module Windu
+end # Windu

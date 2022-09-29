@@ -19,18 +19,37 @@
 #    distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 #    KIND, either express or implied. See the Apache License for the specific
 #    language governing permissions and limitations under the Apache License.
+#
 
 # frozen_string_literal: true
 
 module Windu
 
-  # This should be extended into the Windu module
-  module Utility
+  module Mixins
 
-    def self.extended(extender)
-      Windu.verbose_extend extender, self
-    end
+    module Loading
 
-  end # Utility
+      def self.extended(extender)
+        Windu.verbose_extend extender, self
+      end
 
-end # Windu
+      # Use the load_msg method defined for Zeitwerk
+      def load_msg(msg)
+        WinduZeitwerkConfig.load_msg msg
+      end
+
+      # Mention that a module is being included into something
+      def verbose_include(includer, includee)
+        load_msg "--> #{includer} is including #{includee}"
+      end
+
+      # Mention that a module is being extended into something
+      def verbose_extend(extender, extendee)
+        load_msg "--> #{extender} is extending #{extendee}"
+      end
+
+    end # module Loading
+
+  end #   module Mixins
+
+end # module Windu
