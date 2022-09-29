@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.name        = proj_name
   s.version     = Windu::VERSION
   s.authors     = ['Chris Lasell']
-  s.email       = 'd3@pixar.com'
+  s.email       = 'windu@pixar.com'
   s.homepage    = 'http://pixaranimationstudios.github.io/depot3/'
   s.license     = 'Nonstandard'
   s.date        = Time.now.strftime('%F')
@@ -49,5 +49,19 @@ Gem::Specification.new do |s|
 
   # Dependencies
   #####
-  # s.add_runtime_dependency 'pixar-ruby-extensions', '~>1.0'
+
+  s.add_runtime_dependency 'pixar-ruby-extensions', '~>1.0'
+
+  # https://github.com/fxn/zeitwerk MIT License (no dependencies)
+  s.add_runtime_dependency 'zeitwerk', '~> 2.5', '>= 2.5.4'
+
+  # https://github.com/lostisland/faraday: MIT License
+  s.add_runtime_dependency 'faraday', '~> 1.0'
+
+  # https://github.com/lostisland/faraday_middleware & dependencies: MIT License
+  s.add_runtime_dependency 'faraday_middleware', '~> 1.0'
+
+  # Rdoc
+  s.extra_rdoc_files = ['README.md', 'LICENSE.txt', 'CHANGES.md']
+  s.rdoc_options << '--title' << 'JSS' << '--line-numbers' << '--main' << 'README.md'
 end

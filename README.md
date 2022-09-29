@@ -2,7 +2,7 @@
 
 Windu provides a Ruby interface to the REST API of the Jamf Title Editor, formerly known as 'Kinobi'.
 
-It works very much like ruby-jss, with a huge, important difference:
+It works very much like [ruby-jss](http://pixaranimationstudios.github.io/ruby-jss/index.html), with a huge, important difference:
 
 **Changes made to Ruby objects happen immediately on the server** There is no need to '.save' anything.
 
@@ -10,7 +10,13 @@ Another difference is that, for now anyway, there is only one 'default' connecti
 
 This means that, for now, you can't connect to multiple servers at the same time and pass around connection objects. This will probably change in future versions.
 
-Quick Summary:
+As with ruby-jss, the entire API is not implemented here, only the objects necessary to maintain Software Titles. For other purposes (Acct management, overall settings, etc) please use the Title Editor Web UI.
+
+See also:
+- [Documentation about using the Title Editor via its GUI WebApp](https://docs.jamf.com/title-editor/documentation/index.html)
+- [Documentation about the underlying REST API used by Windu](https://developer.jamf.com/title-editor/reference)
+
+Usage:
 
 ```ruby
 require 'windu'
@@ -23,10 +29,12 @@ Windu.connect url, pw: :prompt
 
 #### SOFTWARE TITLES
 #####################################
-
-# All access to other objects happens through the SoftewareTitle that contains them.
+# All access to API objects happens through the SoftewareTitle that contains them.
 # So to work with Requirements, Patches, KillApps, ExtensionAttributes, etc... you must
 # fetch or create the SoftwareTitle that they are a part of.
+
+# Get an Array of Hashes with summary data about all existing SoftwareTitles
+all_titles = Windu::SoftwareTitle.all
 
 # Create a SoftwareTitle. This happens immediately on the server
 test_title = Windu::SoftwareTitle.create(
@@ -95,6 +103,8 @@ title.requirements.replace_criterion(
   value: 'com.mycompany.windutest',
   and_or: :or
 )
+
+# To delete a requirement: title.requirements.delete_criterion requirementId
 
 #### PATCHES
 #####################################
