@@ -388,6 +388,27 @@ module Windu
         @keep_alive_thread = nil
       end
 
+      # Invalidate this token by stopping any keepalive thread and
+      # setting most values to nil or :disconnected
+      #
+      # @return [void]
+      #
+      def disconnect
+        stop_keep_alive
+        @token = nil
+        @pw = nil
+        @pw_fallback = nil
+        @keep_alive = nil
+        @creation_http_response = nil
+        @expires = Time.now
+        @scope = nil
+        @user = :disconnected
+        @user_id = 0
+        @valid = false
+        @domain = :disconnected
+        @tenantId = :disconnected
+      end
+
       # Private instance methods
       #################################
       private
