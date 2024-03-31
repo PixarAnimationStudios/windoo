@@ -164,8 +164,6 @@ module Windu
       # @return [void]
       def validate_connection
         raise Windu::NotConnectedError, 'Not connected, use #connect first' unless connected?
-
-        # raise Windu::InvalidTokenError, 'Invalid connection token, use #connect to make a new one' unless token&.valid?
       end
 
     end # module

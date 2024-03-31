@@ -490,9 +490,9 @@ module Windu
           con.options[:timeout] = @timeout
           con.options[:open_timeout] = @timeout
           if token
-            con.authorization :Bearer, token
+            con.request :authorization, 'Bearer', token
           else
-            con.basic_auth @user, Base64.decode64(@pw)
+            con.request :authorization, :basic, @user, Base64.decode64(@pw)
           end
           con.adapter :net_http
         end # Faraday.new

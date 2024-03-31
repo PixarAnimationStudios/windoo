@@ -56,12 +56,9 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'zeitwerk', '~> 2.5', '>= 2.5.4'
 
   # https://github.com/lostisland/faraday: MIT License
-  s.add_runtime_dependency 'faraday', '~> 1.0'
-
-  # https://github.com/lostisland/faraday_middleware & dependencies: MIT License
-  s.add_runtime_dependency 'faraday_middleware', '~> 1.0'
+  s.add_runtime_dependency 'faraday', '~> 2.8'
 
   # Rdoc
   s.extra_rdoc_files = ['README.md', 'LICENSE.txt', 'CHANGES.md']
-  s.rdoc_options << '--title' << 'JSS' << '--line-numbers' << '--main' << 'README.md'
+  s.rdoc_options << '--title' << 'Windu' << '--line-numbers' << '--main' << 'README.md'
 end

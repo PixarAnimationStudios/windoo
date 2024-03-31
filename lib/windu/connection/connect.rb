@@ -189,12 +189,6 @@ module Windu
           raise Windu::NotConnectedError,
                 "Connection '#{name}' Not Connected. Use #{using_dft}.connect first."
         end
-
-        # update the Faraday connection to use the current token
-        # if it has been auto-refreshed
-        return if cnx.headers['Authorization'] == "Bearer #{@token.token}"
-
-        cnx.authorization :Bearer, @token.token
       end
 
       # With a REST connection, there isn't any real "connection" to disconnect from
@@ -406,7 +400,7 @@ module Windu
       #######################################################
       def create_connection
         Faraday.new(@token.base_url, ssl: @token.ssl_options) do |cnx|
-          cnx.authorization :Bearer, @token.token
+          cnx.request :authorization, 'Bearer', -> { @token.token }
 
           cnx.options[:timeout] = @timeout
           cnx.options[:open_timeout] = @open_timeout
