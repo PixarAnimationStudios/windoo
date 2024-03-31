@@ -143,9 +143,9 @@ kaid = patch.killApps.add_killApp(
 )
 
 # Update a killApp attribute
-patch.killApps.update_killApp  kaid, bundleId: 'com.pixartest.windutest'
+patch.killApps.update_killApp  kaid, bundleId: 'com.mycompany.windutest'
 
-# delete a killall
+# delete a killApp
 patch.killApps.delete_killApp kaid
 
 ##### CAPABILITIES - criteria identifying macs that can install/run this patch
@@ -171,8 +171,12 @@ patch.capabilities.add_criterion(
   value: patch.minimumOperatingSystem
 )
 
+# To make a criterion that uses the value returned by the extension
+# attribute for this title, you must use its 'key' as the 'name', and
+# the 'type' must be 'extensionAttribute'
+# (by default the 'type' is 'recon')
 patch.capabilities.add_criterion(
-  name: title.extensionAttribute.key, # must be the 'key' of the ext attr for this title
+  name: title.extensionAttribute.key,
   operator: 'is',
   value: 'yes',
   type: 'extensionAttribute'
@@ -191,6 +195,7 @@ patch.add_component(
 patch.component.name =  title.name
 patch.component.version = patch.version
 
+# add criteria
 patch.component.criteria.add_criterion(
   name: 'Application Title',
   operator: 'is',
