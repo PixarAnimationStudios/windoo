@@ -32,7 +32,7 @@ module Windoo
   # See https://cultivatehq.com/posts/ruby-constant-resolution/ for
   # an explanation
 
-  # The minimum Ruby version needed for ruby-jss
+  # The minimum Ruby version needed for windoo
   MINIMUM_RUBY_VERSION = '2.6.3'
 
   # These are handy for testing values without making new arrays, strings, etc every time.

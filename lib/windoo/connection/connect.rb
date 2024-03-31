@@ -151,7 +151,7 @@ module Windoo
 
         prompt_for_password(params) if params[:pw] == :prompt
 
-        # apply defaults from config, client, and then ruby-jss itself.
+        # apply defaults from config, client, and then windoo itself.
         apply_default_params params
 
         # Once we're here, all params have been parsed & defaulted into the
