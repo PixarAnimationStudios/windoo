@@ -1,6 +1,6 @@
-# Windu - a colleague of Kenobi
+# Windoo - a colleague of Kenobi
 
-Windu provides a Ruby interface to the REST API of the [Jamf Title Editor](https://docs.jamf.com/title-editor/documentation/About_Title_Editor.html), formerly known as 'Kinobi'.
+Windoo provides a Ruby interface to the REST API of the [Jamf Title Editor](https://docs.jamf.com/title-editor/documentation/About_Title_Editor.html), formerly known as 'Kinobi'.
 
 It works very much like [ruby-jss](http://pixaranimationstudios.github.io/ruby-jss/index.html), with a huge, important difference:
 
@@ -14,12 +14,12 @@ As with ruby-jss, the entire API is not implemented here, only the objects neces
 
 See also:
 - [Documentation about using the Title Editor via its GUI WebApp](https://docs.jamf.com/title-editor/documentation/index.html)
-- [Documentation about the underlying REST API used by Windu](https://developer.jamf.com/title-editor/reference)
+- [Documentation about the underlying REST API used by Windoo](https://developer.jamf.com/title-editor/reference)
 
 Usage:
 
 ```ruby
-require 'windu'
+require 'windoo'
 
 #### CONNECT
 #####################################
@@ -27,7 +27,7 @@ require 'windu'
 url = 'https://mylogin@a1b2c3d4.appcatalog.jamfcloud.com'
 
 # Connect the default connection.
-Windu.connect url, pw: :prompt
+Windoo.connect url, pw: :prompt
 
 #### SOFTWARE TITLES
 #####################################
@@ -36,23 +36,23 @@ Windu.connect url, pw: :prompt
 # fetch or create the SoftwareTitle that they are a part of.
 
 # Get an Array of Hashes with summary data about all existing SoftwareTitles
-all_titles = Windu::SoftwareTitle.all
+all_titles = Windoo::SoftwareTitle.all
 
 # Create a SoftwareTitle. This happens immediately on the server
-test_title = Windu::SoftwareTitle.create(
-  id: 'com.mycompany.windu.test-0-rama',
-  name: 'Windu Test Oh Rama',
+test_title = Windoo::SoftwareTitle.create(
+  id: 'com.mycompany.windoo.test-0-rama',
+  name: 'Windoo Test Oh Rama',
   publisher: 'My Company',
   currentVersion: '0.0.1b1'
 )
 
 # or fetch an existing one by softwareTitleId or 'id'
-title = Windu::SoftwareTitle.fetch softwareTitleId: test_title.softwareTitleId
-title = Windu::SoftwareTitle.fetch id: test_title.id
+title = Windoo::SoftwareTitle.fetch softwareTitleId: test_title.softwareTitleId
+title = Windoo::SoftwareTitle.fetch id: test_title.id
 
 # update title attributes, these are immediately changed on the server
-title.id = 'com.mycompany.windutest'
-title.name = 'Windu Test'
+title.id = 'com.mycompany.windootest'
+title.name = 'Windoo Test'
 title.publisher = 'My Company, Inc.'
 title.currentVersion = '0.0.1a1'
 
@@ -63,14 +63,14 @@ title.currentVersion = '0.0.1a1'
 
 # add an extension attribute to the title, there can only be one per title
 title.add_extensionAttribute(
-  key: 'can-run-windu-test1',
-  displayName: 'Can Run Windu Test1',
+  key: 'can-run-windoo-test1',
+  displayName: 'Can Run Windoo Test1',
   script: "#!/bin/bash\necho <result>UBETCHA!</result>"
 )
 
 # update EA attributes
-title.extensionAttribute.key = 'can-run-windu-test'
-title.extensionAttribute.displayName = 'Can Run Windu Test'
+title.extensionAttribute.key = 'can-run-windoo-test'
+title.extensionAttribute.displayName = 'Can Run Windoo Test'
 title.extensionAttribute.script = "#!/bin/bash\necho <result>yes</result>"
 
 # delete the EA with: title.delete_extensionAttribute
@@ -82,13 +82,13 @@ title.extensionAttribute.script = "#!/bin/bash\necho <result>yes</result>"
 title.requirements.add_criterion(
   name: 'Application Title',
   operator: 'is',
-  value: 'WinduTest.app'
+  value: 'WindooTest.app'
 )
 
 title.requirements.add_criterion(
   name: 'Application Bundle ID',
   operator: 'is',
-  value: 'com.mycompany.windutest1',
+  value: 'com.mycompany.windootest1',
   and_or: :or
 )
 
@@ -102,7 +102,7 @@ title.requirements.replace_criterion(
   req_id,
   name: 'Application Bundle ID',
   operator: 'is',
-  value: 'com.mycompany.windutest',
+  value: 'com.mycompany.windootest',
   and_or: :or
 )
 
@@ -138,12 +138,12 @@ title.patches.add_patch(
 patch = title.patches.first
 
 kaid = patch.killApps.add_killApp(
-  appName: 'WinduTest.app',
-  bundleId: 'com.mycompany.windutest1'
+  appName: 'WindooTest.app',
+  bundleId: 'com.mycompany.windootest1'
 )
 
 # Update a killApp attribute
-patch.killApps.update_killApp  kaid, bundleId: 'com.mycompany.windutest'
+patch.killApps.update_killApp  kaid, bundleId: 'com.mycompany.windootest'
 
 # delete a killApp
 patch.killApps.delete_killApp kaid
@@ -187,7 +187,7 @@ patch.capabilities.add_criterion(
 
 # add one
 patch.add_component(
-  name: 'Windu SoftwareTitle Test',
+  name: 'Windoo SoftwareTitle Test',
   version: '0.0.1a5a'
 )
 
@@ -199,7 +199,7 @@ patch.component.version = patch.version
 patch.component.criteria.add_criterion(
   name: 'Application Title',
   operator: 'is',
-  value: 'WinduTest.app'
+  value: 'WindooTest.app'
 )
 
 patch.component.criteria.add_criterion(
