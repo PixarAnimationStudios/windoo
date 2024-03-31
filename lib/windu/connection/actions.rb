@@ -122,9 +122,17 @@ module Windu
           msg = 'Not Found'
 
         when 401
-          err = Windu::PermissionError
-          msg = 'You are not authorized to do that.'
+          if resp.body[:errors].find { |e| e[:description] =~ /token not found/i }
+            err = Windu::InvalidTokenError
+            msg = 'Connection Token is not valid.'
 
+          elsif resp.body[:errors].find { |e| e[:description] =~ /expired token/i }
+            err = Windu::InvalidTokenError
+            msg = 'Connection Token has expired.'
+          else
+            err = Windu::PermissionError
+            msg = 'You are not authorized to do that.'
+          end
         when (500..599)
           err = Windu::ConnectionError
           msg = 'There was an internal server error'
@@ -134,7 +142,7 @@ module Windu
           msg = "There was a error processing your request, status: #{resp.status}"
 
         end # case
-        msg = "#{msg}\nResponse Body:\n#{parse_http_error_body(resp)}"
+        msg = "#{msg}\nStatus: #{resp.status}\nResponse Body:\n#{parse_http_error_body(resp)}"
         raise err, msg
       end
 
