@@ -225,22 +225,22 @@ module Windu
       },
 
       # @attribute appName
-      #   @return [String] Currently not used by the Title Editor.
-      #      the value is always nil, and there is no matching
-      #      data in the Web UI. These data exist in the killApps
-      #      associated with Patches
-      # appName: {
-      #   class: :String
-      # },
+      #   @return [String] Currently not used by the Title Editor
+      #      or Jamf Pro Patch Titles.
+      #      There is no matching data in the Web UI.
+      #      These data exist in the killApps associated with Patches
+      appName: {
+        class: :String
+      },
 
       # @attribute bundleId
-      #   @return [String] Currently not used by the Title Editor.
-      #      the value is alwways nil, and there is no matching
-      #      data in the Web UI. These data exist in the killApps
-      #      associated with Patches
-      # bundleId: {
-      #   class: :String
-      # },
+      #   @return [String] Currently not used by the Title Editor
+      #      or Jamf Pro Patch Titles.
+      #      There is no matching data in the Web UI.
+      #      These data exist in the killApps associated with Patches
+      bundleId: {
+        class: :String
+      },
 
       # @!attribute lastModified
       #   @return [Time]  When was the title last modified, in UTC?
@@ -322,7 +322,7 @@ module Windu
       },
 
       # @!attribute extensionAttributes
-      #   @return [Array<Windu::ExtensionAttribute>] The Extension Attribute used by this title.
+      #   @return [Windu::ExtensionAttribute] The Extension Attribute used by this title.
       #     NOTE: See the module Windu::Mixins::SoftwareTitle::ExtentionAttribute
       extensionAttribute: {
         class: Windu::ExtensionAttribute,
