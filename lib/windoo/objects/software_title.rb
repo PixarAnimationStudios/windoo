@@ -98,14 +98,14 @@ module Windoo
 
       id =
         if ident
-          valid_id ident, raise_if_not_found: true
+          valid_id ident, raise_if_not_found: true, cnx: cnx
         else
           key, ident = key_and_ident.first
 
           # Dont call valid_id if we are fetching based on the primary_id_key
           # just used the value provided. The API will complain if it
           # doesn't exist
-          key == primary_id_key ? ident : valid_id(ident, key: key, raise_if_not_found: true)
+          key == primary_id_key ? ident : valid_id(ident, key: key, raise_if_not_found: true, cnx: cnx)
         end
 
       init_data = cnx.get("#{self::RSRC_PATH}/#{id}")
@@ -120,12 +120,12 @@ module Windoo
     # @return [Integer, nil] given any identifier, return the matching primary id
     #   or nil if no match
     ####
-    def self.valid_id(ident, key: nil, raise_if_not_found: false)
+    def self.valid_id(ident, key: nil, raise_if_not_found: false, cnx: Windoo.cnx)
       matched_summary =
         if key
-          all.select { |summary| summary[key] == ident }.first
+          all(cnx: cnx).select { |summary| summary[key] == ident }.first
         else
-          find_summary_for_ident(ident)
+          find_summary_for_ident(ident, cnx: cnx)
         end
 
       value = matched_summary ? matched_summary[primary_id_key] : nil
@@ -136,8 +136,8 @@ module Windoo
     end
 
     ####
-    def self.find_summary_for_ident(ident)
-      all.each do |summary|
+    def self.find_summary_for_ident(ident, cnx: Windoo.cnx)
+      all(cnx: cnx).each do |summary|
         ident_keys.each do |key|
           return summary if summary[key] == ident
         end
@@ -153,7 +153,7 @@ module Windoo
     # @return [Array<Hash>] the autofill patch data
     ####
     def self.autofill_patches(ident, cnx: Windoo.cnx)
-      id = valid_id ident, raise_if_not_found: true
+      id = valid_id ident, raise_if_not_found: true, cnx: cnx
 
       cnx.get("#{self::RSRC_PATH}/#{id}/patches/autofill")
     end
@@ -165,7 +165,7 @@ module Windoo
     # @return [Array<Hash>] the autofill requirement data
     ####
     def self.autofill_requirements(ident, cnx: Windoo.cnx)
-      id = valid_id ident, raise_if_not_found: true
+      id = valid_id ident, raise_if_not_found: true, cnx: cnx
 
       cnx.get("#{self::RSRC_PATH}/#{id}/requirements/autofill")
     end

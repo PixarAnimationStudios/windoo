@@ -115,7 +115,7 @@ module Windoo
         # @return [Object] A new instance of the class, already saved
         #   to the server.
         ####
-        def create(container: nil, **init_data)
+        def create(container: nil, cnx: Windoo.cnx, **init_data)
           container = Windoo::Validate.container_for_new_object(
             new_object_class: self,
             container: container
@@ -143,7 +143,7 @@ module Windoo
           obj = new(**init_data)
 
           # create it on the server
-          obj.create_on_server
+          obj.create_on_server cnx: cnx
 
           # return it
           obj
