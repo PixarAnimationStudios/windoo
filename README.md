@@ -4,11 +4,7 @@ Windoo provides a Ruby interface to the REST API of the [Jamf Title Editor](http
 
 It works very much like [ruby-jss](http://pixaranimationstudios.github.io/ruby-jss/index.html), with a huge, important difference:
 
-**Changes made to Ruby objects happen immediately on the server** There is no need to '.save' anything.
-
-Another difference is that, for now anyway, there is only one 'default' connection to the server.  All server interaction happens using the default connection.
-
-This means that, for now, you can't connect to multiple servers at the same time and pass around connection objects. This will probably change in future versions.
+**Changes made to Ruby objects happen immediately on the server** There is no need to '.save' anything, but be very careful as you make changes!
 
 As with ruby-jss, the entire API is not implemented here, only the objects necessary to maintain Software Titles. For other purposes (Acct management, overall settings, etc) please use the Title Editor Web UI.
 

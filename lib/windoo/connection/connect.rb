@@ -169,7 +169,7 @@ module Windoo
         @timeout = params[:timeout]
         @open_timeout = params[:open_timeout]
 
-        @name ||= "#{user}@#{host}:#{port}"
+        @name ||= "#{params[:user]}@#{params[:host]}:#{params[:port]}"
 
         # the faraday connection object
         @cnx = create_connection
@@ -185,10 +185,10 @@ module Windoo
       # the current token
       def validate_connected
         using_dft = 'Windoo.cnx' if self == Windoo.cnx
-        unless connected?
-          raise Windoo::NotConnectedError,
-                "Connection '#{name}' Not Connected. Use #{using_dft}.connect first."
-        end
+        return if connected?
+
+        raise Windoo::NotConnectedError,
+              "Connection '#{name}' Not Connected. Use #{using_dft}.connect first."
       end
 
       # With a REST connection, there isn't any real "connection" to disconnect from
@@ -231,15 +231,15 @@ module Windoo
       #
       #######################################################
       def parse_url(url, params)
-        if url
-          url = URI.parse url.to_s
-          raise ArgumentError, 'Invalid url, scheme must be https' unless url.scheme == HTTPS_SCHEME
+        return unless url
 
-          params[:host] ||= url.host
-          params[:port] ||= url.port unless url.port == SSL_PORT
-          params[:user] ||= url.user if url.user
-          params[:pw] ||= url.password if url.password
-        end
+        url = URI.parse url.to_s
+        raise ArgumentError, 'Invalid url, scheme must be https' unless url.scheme == HTTPS_SCHEME
+
+        params[:host] ||= url.host
+        params[:port] ||= url.port unless url.port == SSL_PORT
+        params[:user] ||= url.user if url.user
+        params[:pw] ||= url.password if url.password
       end
 
       # Apply defaults to the unset params for the #connect method

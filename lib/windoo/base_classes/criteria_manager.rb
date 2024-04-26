@@ -114,14 +114,14 @@ module Windoo
 
       # @return [Array<String>] The names of all available recon criteria names
       #####
-      def self.available_names
-        Windoo.cnx.get 'valuelists/criteria/names'
+      def self.available_names(cnx: Windoo.cnx)
+        cnx.get 'valuelists/criteria/names'
       end
 
       # @return [Array<String>] The possible criteria types
       #####
-      def self.available_types
-        Windoo.cnx.get 'valuelists/criteria/types'
+      def self.available_types(cnx: Windoo.cnx)
+        cnx.get 'valuelists/criteria/types'
       end
 
       # Find out the available critrion operators for a given criterion.
@@ -141,8 +141,8 @@ module Windoo
       # @return [Array<String>] The possible operators for a given criterion name
       #
       #####
-      def self.operators_for(name)
-        Windoo.cnx.post 'valuelists/criteria/operators', { name: name }
+      def self.operators_for(name, cnx: Windoo.cnx)
+        cnx.post 'valuelists/criteria/operators', { name: name }
       end
 
       # Public Instance Methods

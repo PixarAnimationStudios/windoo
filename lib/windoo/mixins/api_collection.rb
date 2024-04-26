@@ -152,12 +152,12 @@ module Windoo
         # Instantiate from the API directly.
         # @return [Object]
         ####
-        def fetch(primary_ident)
+        def fetch(primary_ident, cnx: Windoo.cnx)
           if primary_ident.is_a? Hash
             raise 'All API objects other than SoftwareTitle are fetched only by their id number'
           end
 
-          init_data = Windoo.cnx.get("#{self::RSRC_PATH}/#{primary_ident}")
+          init_data = cnx.get("#{self::RSRC_PATH}/#{primary_ident}")
           init_data[:fetching] = true
           new(**init_data)
         end
@@ -176,12 +176,12 @@ module Windoo
         end
 
         ####
-        def delete(primary_ident)
+        def delete(primary_ident, cnx: Windoo.cnx)
           if primary_ident.is_a? Hash
             raise 'All API objects other than SoftwareTitle are deleted only by their id number'
           end
 
-          Windoo.cnx.delete("#{self::RSRC_PATH}/#{primary_ident}")
+          cnx.delete("#{self::RSRC_PATH}/#{primary_ident}")
         end
 
       end # module ClassMethods
@@ -278,14 +278,14 @@ module Windoo
       #
       # @return [Integer] The id of the newly created object
       #
-      def create_on_server
+      def create_on_server(cnx: Windoo.cnx)
         unless @creating
           raise Windoo::UnsupportedError,
                 "Do not call 'create_on_server' directly - use the .create class method."
         end
 
         rsrc = creation_rsrc
-        resp = Windoo.cnx.post rsrc, to_json
+        resp = cnx.post rsrc, to_json
 
         update_title_modify_time(resp)
 
@@ -313,7 +313,7 @@ module Windoo
       #
       #
       # @return [Integer] the id of the updated item.
-      def update_on_server(attr_name, new_value)
+      def update_on_server(attr_name, new_value, cnx: Windoo.cnx)
         # This may be nil if given an alt name for an alt value
         attr_def = self.class.json_attributes[attr_name]
 
@@ -331,7 +331,7 @@ module Windoo
 
         json_to_put = { attr_name => value_to_send }.to_json
 
-        resp = Windoo.cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
+        resp = cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
         update_title_modify_time(resp)
         handle_update_response(resp)
       end

@@ -33,19 +33,17 @@ module Windoo
     ######################
     module DefaultConnection
 
+      # When this module is extended into a class
       def self.extended(extender)
         Windoo.verbose_extend extender, self
       end
 
-      # The current default Jamf::Connection instance.
+      # The current default Windoo::Connection instance.
       #
-      # Yes this is a module variable '@@' because it is
-      # shared among all items that extend this module.
-      #
-      # @return [Jamf::Connection]
+      # @return [Windoo::Connection]
       #
       def default_connection
-        @@default_connection ||= Windoo::Connection.new name: :default
+        @default_connection ||= Windoo::Connection.new name: :default
       end
       alias cnx default_connection
 
@@ -53,21 +51,21 @@ module Windoo
       # future API calls. This will replace the existing default connection with
       # a totally new one
       #
-      # @param (See Jamf::Connection#initialize)
+      # @param (See Windoo::Connection#initialize)
       #
       # @return [String] the to_s output of the new connection
       #
       def connect(url = nil, **params)
         params[:name] ||= :default
-        @@default_connection = Windoo::Connection.new url, **params
-        @@default_connection.to_s
+        @default_connection = Windoo::Connection.new url, **params
+        @default_connection.to_s
       end
       alias login connect
 
-      # Use the given Jamf::Connection object as the default connection, replacing
+      # Use the given Windoo::Connection object as the default connection, replacing
       # the one that currently exists.
       #
-      # @param connection [Jamf::Connection] The default Connection to use for future
+      # @param connection [Windoo::Connection] The default Connection to use for future
       #   API calls
       #
       # @return [APIConnection] The connection now being used.
@@ -77,13 +75,13 @@ module Windoo
           raise 'Title Editor connections must be instances of Windoo::Connection'
         end
 
-        @@default_connection = connection
+        @default_connection = connection
       end
 
       # Disconnect the default connection
       #
       def disconnect
-        @@default_connection.disconnect if @@default_connection&.connected?
+        @default_connection.disconnect if @default_connection&.connected?
       end
       alias logout disconnect
 

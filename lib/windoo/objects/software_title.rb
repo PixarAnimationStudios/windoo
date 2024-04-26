@@ -80,8 +80,8 @@ module Windoo
     #
     # @return [Array<Hash>]
     ####
-    def self.all
-      Windoo.cnx.get(self::RSRC_PATH)
+    def self.all(cnx: Windoo.cnx)
+      cnx.get(self::RSRC_PATH)
     end
 
     # Override the method from APICollection, because
@@ -90,7 +90,7 @@ module Windoo
     #
     # @return [Windoo::SoftwareTitle]
     ####
-    def self.fetch(ident = nil, **key_and_ident)
+    def self.fetch(ident = nil, cnx: Windoo.cnx, **key_and_ident)
       unless ident || !key_and_ident.empty?
         raise ArgumentError,
               "ident, or 'key: ident' is required to fetch #{self.class}"
@@ -108,7 +108,7 @@ module Windoo
           key == primary_id_key ? ident : valid_id(ident, key: key, raise_if_not_found: true)
         end
 
-      init_data = Windoo.cnx.get("#{self::RSRC_PATH}/#{id}")
+      init_data = cnx.get("#{self::RSRC_PATH}/#{id}")
       init_data[:fetching] = true
       new(**init_data)
     end
@@ -152,10 +152,10 @@ module Windoo
     #
     # @return [Array<Hash>] the autofill patch data
     ####
-    def self.autofill_patches(ident)
+    def self.autofill_patches(ident, cnx: Windoo.cnx)
       id = valid_id ident, raise_if_not_found: true
 
-      Windoo.cnx.get("#{self::RSRC_PATH}/#{id}/patches/autofill")
+      cnx.get("#{self::RSRC_PATH}/#{id}/patches/autofill")
     end
 
     # Get the 'autofill requirements' for a given software title
@@ -164,10 +164,10 @@ module Windoo
     #
     # @return [Array<Hash>] the autofill requirement data
     ####
-    def self.autofill_requirements(ident)
+    def self.autofill_requirements(ident, cnx: Windoo.cnx)
       id = valid_id ident, raise_if_not_found: true
 
-      Windoo.cnx.get("#{self::RSRC_PATH}/#{id}/requirements/autofill")
+      cnx.get("#{self::RSRC_PATH}/#{id}/requirements/autofill")
     end
 
     # Attributes
