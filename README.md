@@ -1,4 +1,4 @@
-# Windoo - a colleague of Kenobi
+# Windoo - a colleague of Kinobi
 
 Windoo provides a Ruby interface to the REST API of the [Jamf Title Editor](https://docs.jamf.com/title-editor/documentation/About_Title_Editor.html), formerly known as 'Kinobi'.
 
