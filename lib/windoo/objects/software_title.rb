@@ -121,7 +121,9 @@ module Windoo
         end
 
       init_data = cnx.get("#{self::RSRC_PATH}/#{id}")
+      init_data[:cnx] = cnx
       init_data[:fetching] = true
+
       new(**init_data)
     end
 

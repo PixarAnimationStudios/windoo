@@ -31,9 +31,9 @@ module Windoo
     # in Software Titles.
     #
     # This class manages an array of instances of subclasses of
-    # {Windoo::BaseClasses::Criterion Windoo::BaseClasses::Criterion}
+    # {Windoo::BaseClasses::Criterion}
     #
-    # See also: {Windoo::BaseClasses::ArrayManager Windoo::BaseClasses::ArrayManager}
+    # See also: {Windoo::BaseClasses::ArrayManager}
     # for info about managed Arrays.
     #
     # This class should be the superclass of classes representing
@@ -185,6 +185,7 @@ module Windoo
         absoluteOrderId ||= @managed_array.size
 
         new_criterion = self.class::MEMBER_CLASS.create(
+          cnx: container.cnx,
           container: container,
           and_or: and_or,
           name: name,

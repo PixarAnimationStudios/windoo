@@ -158,6 +158,7 @@ module Windoo
           end
 
           init_data = cnx.get("#{self::RSRC_PATH}/#{primary_ident}")
+          init_data[:cnx] = cnx
           init_data[:fetching] = true
           new(**init_data)
         end
@@ -172,13 +173,14 @@ module Windoo
             container: container
           )
           init_data[:from_container] = container
+          init_data[:cnx] = container.cnx
           new(**init_data)
         end
 
         ####
         def delete(primary_ident, cnx: Windoo.cnx)
           if primary_ident.is_a? Hash
-            raise 'All API objects other than SoftwareTitle are deleted only by their id number'
+            raise ArgumentError, 'All API objects other than SoftwareTitle are deleted only by their id number'
           end
 
           cnx.delete("#{self::RSRC_PATH}/#{primary_ident}")
@@ -190,6 +192,8 @@ module Windoo
       ######################
       def initialize(**init_data)
         fetching = init_data.delete :fetching
+        @cnx = init_data.delete :cnx
+
         @container ||= init_data.delete :from_container
 
         # we save 'creating' in an inst. var so we know to create
@@ -234,7 +238,13 @@ module Windoo
         primary_id == other.primary_id
       end
 
-      # @return [Boolean] Does this object h
+      # @return [Integer] our primary identifier value before we were deleted.
+      #   Before deletion, this is nil
+      #
+      def deleted_id
+        @deleted_id
+      end
+
       # @return [Integer] our primary identifier value before we were deleted.
       #   Before deletion, this is nil
       #
@@ -246,6 +256,11 @@ module Windoo
       #   then here is the object that contains it
       def container
         @container
+      end
+
+      # @return [Windoo::Connection] The server connection for this object
+      def cnx
+        @cnx
       end
 
       # @return [Windoo::SoftwareTitle] The SoftwareTitle object that ultimately
@@ -264,7 +279,7 @@ module Windoo
       #
       #############
       def delete
-        self.class.delete primary_id
+        self.class.delete primary_id, cnx: cnx
         @deleted_id = primary_id
         instance_variable_set "@#{self.class.primary_id_key}", -1
         @deleted_id
@@ -284,6 +299,7 @@ module Windoo
                 "Do not call 'create_on_server' directly - use the .create class method."
         end
 
+        @cnx = cnx
         rsrc = creation_rsrc
         resp = cnx.post rsrc, to_json
 
@@ -313,7 +329,7 @@ module Windoo
       #
       #
       # @return [Integer] the id of the updated item.
-      def update_on_server(attr_name, new_value, cnx: Windoo.cnx)
+      def update_on_server(attr_name, new_value)
         # This may be nil if given an alt name for an alt value
         attr_def = self.class.json_attributes[attr_name]
 
@@ -331,6 +347,7 @@ module Windoo
 
         json_to_put = { attr_name => value_to_send }.to_json
 
+        # should use our @cnx...
         resp = cnx.put "#{self.class::RSRC_PATH}/#{primary_id}", json_to_put
         update_title_modify_time(resp)
         handle_update_response(resp)

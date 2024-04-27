@@ -92,6 +92,7 @@ module Windoo
     #
     def add_patch(version:, minimumOperatingSystem:, releaseDate: nil, reboot: nil, standalone: nil, absoluteOrderId: 0)
       new_patch = Windoo::Patch.create(
+        cnx: container.cnx,
         container: container,
         version: version,
         minimumOperatingSystem: minimumOperatingSystem,

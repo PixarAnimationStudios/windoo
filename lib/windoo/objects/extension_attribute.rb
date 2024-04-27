@@ -63,7 +63,7 @@ module Windoo
         init_data.delete :script
       end
 
-      super
+      super container: container, cnx: container.cnx, **init_data
     end
 
     # Attributes

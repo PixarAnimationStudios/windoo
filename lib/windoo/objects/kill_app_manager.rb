@@ -57,6 +57,7 @@ module Windoo
     #
     def add_killApp(appName:, bundleId:)
       new_ka = Windoo::KillApp.create(
+        cnx: container.cnx,
         container: container,
         appName: appName,
         bundleId: bundleId
