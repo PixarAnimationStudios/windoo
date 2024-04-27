@@ -84,6 +84,18 @@ module Windoo
       cnx.get(self::RSRC_PATH)
     end
 
+    # @return [Array<String>] The ids (unique names) of all titles
+    #####
+    def self.all_ids(cnx: Windoo.cnx)
+      all(cnx: cnx).map { |t| t[:id] }
+    end
+
+    # @return [Array<Integer>] The all_softwareTitleIds (numeric id numbers) of all titles
+    #####
+    def self.all_softwareTitleIds(cnx: Windoo.cnx)
+      all(cnx: cnx).map { |t| t[:softwareTitleId] }
+    end
+
     # Override the method from APICollection, because
     # SoftwareTitles can be looked up by both the primary_ident
     # (softwareTitleId) and secondary (id)
