@@ -159,7 +159,7 @@ module Windoo
         end
         err_text.chomp
       rescue StandardError
-        res.body
+        resp.body
       end
 
     end # module Actions
