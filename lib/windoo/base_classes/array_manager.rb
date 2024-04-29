@@ -283,6 +283,18 @@ module Windoo
         member
       end
 
+      # Delete all members of the array
+      #
+      # Subclasses should override, or define a related method that calls this one,
+      # doing any processing before or after
+      #
+      # @return [void]
+      #
+      def delete_all_members
+        @managed_array.each { |member| member.delete if member.respond_to? :delete }
+        @managed_array = []
+      end
+
       # Return a member of the array by searching for its 'primary_id'
       #
       # @param id [Integer] The primary ID of the object to return.

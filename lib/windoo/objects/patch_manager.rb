@@ -194,6 +194,17 @@ module Windoo
       patchId
     end
 
+    # Delete all the patches
+    #
+    # @return [void]
+    #
+    def delete_all_patches
+      delete_all_members
+      # titles without a patch are not valid
+      # so must be disabled
+      @container.disable
+    end
+
     # Private Instance Methods
     ####################################
     private

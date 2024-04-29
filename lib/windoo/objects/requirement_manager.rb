@@ -53,6 +53,17 @@ module Windoo
       deleted_id
     end
 
+    # Delete all the criteria
+    #
+    # @return [void]
+    #
+    def delete_all_criteria
+      delete_all_members
+      # titles without a requirement are not valid
+      # so must be disabled
+      @container.disable
+    end
+
   end # class RequirementManager
 
 end # Module Windoo

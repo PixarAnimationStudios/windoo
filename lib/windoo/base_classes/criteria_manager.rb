@@ -312,6 +312,14 @@ module Windoo
         delid
       end
 
+      # Delete all the criteria
+      #
+      # @return [void]
+      #
+      def delete_all_criteria
+        delete_all_members
+      end
+
       # Private Instance Methods
       ####################################
       private

@@ -93,6 +93,14 @@ module Windoo
       delete_member(id).deleted_id
     end
 
+    # Delete all the killApps
+    #
+    # @return [void]
+    #
+    def delete_all_killApps
+      delete_all_members
+    end
+
   end # module KillAppManager
 
 end # module Windoo
