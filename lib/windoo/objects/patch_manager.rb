@@ -41,14 +41,14 @@ module Windoo
     ####################################
 
     # @return [Array<Windoo::Patch] An array of the currently enabled patches
-    #
+    ############################
     def all_enabled
       @managed_array.select(&:enabled?)
     end
 
     # @return [Hash {Integer => String}] The Patch IDs => Version installed
     #   by the patch.
-    #
+    ############################
     def patchIds_to_versions
       @managed_array.map { |p| [p.patchId, p.version] }.to_h
     end
@@ -89,7 +89,7 @@ module Windoo
     #   this patch will be added at '0'  the newest, first in the Array.
     #
     # @return [Integer] The id of the new Patch
-    #
+    ############################
     def add_patch(version:, minimumOperatingSystem:, releaseDate: nil, reboot: nil, standalone: nil, absoluteOrderId: 0)
       new_patch = Windoo::Patch.create(
         cnx: container.cnx,
@@ -130,7 +130,7 @@ module Windoo
     # @param attribs [Hash] The attribute(s) to update. See #add_patch
     #
     # @return [Integer] The id of the updated Patch
-    #
+    ############################
     def update_patch(patchId, **attribs)
       # TODO: use this to undo if we changed
       # the absoluteOrderId but something about the
@@ -158,7 +158,7 @@ module Windoo
     #   in the list, use 2.
     #
     # @return [Integer] the new absoluteOrderId
-    #
+    ############################
     def move_patch(patchId, absoluteOrderId:)
       # Can't move it beyond the end of the array....
       max_idx = @managed_array.size - 1
@@ -181,7 +181,7 @@ module Windoo
     #
     #
     # @return [Integer] The id of the deleted Patch
-    #
+    ############################
     def delete_patch(patchId)
       patch = delete_member(patchId)
 
@@ -197,7 +197,7 @@ module Windoo
     # Delete all the patches
     #
     # @return [void]
-    #
+    ############################
     def delete_all_patches
       delete_all_members
       # titles without a patch are not valid
@@ -214,6 +214,7 @@ module Windoo
     # cuz the server should have done it automatically
     #
     # @return [void]
+    ###########################
     def update_local_absoluteOrderIds
       @managed_array.each_with_index do |patch, index|
         patch.local_absoluteOrderId = index

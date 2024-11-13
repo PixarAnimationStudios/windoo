@@ -94,6 +94,7 @@ module Windoo
       #####################################
       module ClassMethods
 
+        ####################
         def self.extended(extender)
           Windoo.verbose_extend extender, self
         end
@@ -114,7 +115,8 @@ module Windoo
         #
         # @return [Object] A new instance of the class, already saved
         #   to the server.
-        ####
+        #
+        ####################
         def create(container: nil, cnx: Windoo.cnx, **init_data)
           container = Windoo::Validate.container_for_new_object(
             new_object_class: self,
@@ -151,7 +153,8 @@ module Windoo
 
         # Instantiate from the API directly.
         # @return [Object]
-        ####
+        #
+        ####################
         def fetch(primary_ident, cnx: Windoo.cnx)
           if primary_ident.is_a? Hash
             raise 'All API objects other than SoftwareTitle are fetched only by their id number'
@@ -166,7 +169,8 @@ module Windoo
         # This is used by container classes to instantiate the objects they contain
         # e.g. when when instantiating a Patch, it needs to instantiate
         # killApps, components, and capabilites. it will do so with this method
-        ####
+        #
+        ####################
         def instantiate_from_container(container:, **init_data)
           container = Windoo::Validate.container_for_new_object(
             new_object_class: self,
@@ -226,12 +230,14 @@ module Windoo
       # @return [nil, Integer] our primary identifier value, regardless of its
       #   attribute name. Before creation, this is nil. After deletion, this is -1
       #
+      ####################
       def primary_id
         send self.class.primary_id_key
       end
 
       # @return [Boolean] Is this object the same as another, based on their
       #   primary_id
+      ####################
       def ==(other)
         return false unless self.class == other.class
 
@@ -241,6 +247,7 @@ module Windoo
       # @return [Integer] our primary identifier value before we were deleted.
       #   Before deletion, this is nil
       #
+      ####################
       def deleted_id
         @deleted_id
       end
@@ -248,23 +255,27 @@ module Windoo
       # @return [Integer] our primary identifier value before we were deleted.
       #   Before deletion, this is nil
       #
+      ####################
       def deleted_id
         @deleted_id
       end
 
       # @return [Windoo::APICollection] If this object is contained within another,
       #   then here is the object that contains it
+      ####################
       def container
         @container
       end
 
       # @return [Windoo::Connection] The server connection for this object
+      ####################
       def cnx
         @cnx
       end
 
       # @return [Windoo::SoftwareTitle] The SoftwareTitle object that ultimately
       #   contains this object
+      ####################
       def softwareTitle
         return self if is_a? Windoo::SoftwareTitle
 
@@ -293,6 +304,7 @@ module Windoo
       #
       # @return [Integer] The id of the newly created object
       #
+      ####################
       def create_on_server(cnx: Windoo.cnx)
         unless @creating
           raise Windoo::UnsupportedError,
@@ -329,6 +341,7 @@ module Windoo
       #
       #
       # @return [Integer] the id of the updated item.
+      ####################
       def update_on_server(attr_name, new_value)
         # This may be nil if given an alt name for an alt value
         attr_def = self.class.json_attributes[attr_name]
@@ -358,6 +371,7 @@ module Windoo
       private
 
       # update the timestamp on the title that contains this object
+      ####################
       def update_title_modify_time(resp)
         if is_a? Windoo::SoftwareTitle
           @lastModified = Time.parse(resp[:lastModified])
@@ -374,6 +388,7 @@ module Windoo
       #
       # @return [String] The resource path for POSTing to the server
       #
+      ####################
       def creation_rsrc
         # if no container id was given, the only thing we can create is
         # a SoftwareTitle.  Everything else is created via its container.

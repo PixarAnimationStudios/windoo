@@ -63,18 +63,21 @@ module Windoo
     class ArrayManager
 
       # Constants
-      #########################
+      ##################################
+      ##################################
 
       PP_OMITTED_INST_VARS = %i[@container].freeze
 
       # Attributes
-      ###############################################
+      ##################################
+      ##################################
 
       # @return [APICollection] the API object that contains this manager
       attr_reader :container
 
       # Constructor
-      ####################################
+      ##################################
+      ##################################
 
       # @param data [Array<Hash>] A JSON array of hashes from the API
       #   containing data the to construct one of these manager objects.
@@ -93,19 +96,22 @@ module Windoo
       end
 
       # Public Instance Methods
-      ####################################
+      ##################################
+      ##################################
 
       # Only selected items are displayed with prettyprint
       # otherwise its too much data in irb.
       #
       # @return [Array] the desired instance_variables
       #
+      ###########################
       def pretty_print_instance_variables
         instance_variables - PP_OMITTED_INST_VARS
       end
 
       # @return [Array<Windoo::BaseClasses::Criterion>] A dup'd and frozen copy of
       #  the array of criteria maintained by this class
+      ###########################
       def to_a
         @managed_array.dup.freeze
       end
@@ -116,26 +122,31 @@ module Windoo
       #####
 
       # @return [Object]
+      ###########################
       def [](idx)
         @managed_array[idx]
       end
 
       # @return [Object]
+      ###########################
       def first
         @managed_array.first
       end
 
       # @return [Object]
+      ###########################
       def last
         @managed_array.last
       end
 
       # @return [Boolean]
+      ###########################
       def empty?
         @managed_array.empty?
       end
 
       # @return [Integer]
+      ###########################
       def size
         @managed_array.size
       end
@@ -146,18 +157,22 @@ module Windoo
       # frozen dup from to_a, since they
       # might try to modify items as they
       # iterate.
+      ###########################
 
       # @return [Array]
+      ###########################
       def each(&block)
         to_a.each(&block)
       end
 
       # @return [Object, nil]
+      ###########################
       def find(if_none = nil, &block)
         to_a.find if_none, &block
       end
 
       # @return [Object, nil]
+      ###########################
       def find_by_attr(attr_name, value)
         return if empty?
         return unless @managed_array.first.respond_to? attr_name
@@ -166,6 +181,7 @@ module Windoo
       end
 
       # @return [Integer, nil]
+      ###########################
       def index(obj = nil, &block)
         return to_a.index(obj) if obj
 
@@ -173,6 +189,7 @@ module Windoo
       end
 
       # Private Instance Methods
+      ##################################
       ##################################
       private
 
@@ -195,6 +212,7 @@ module Windoo
       #
       # @return [Object] the object that was added
       #
+      ###########################
       def add_member(new_member, index: -1)
         @managed_array.insert index, new_member
         new_member
@@ -230,6 +248,7 @@ module Windoo
       #
       # @return [Object] the object that was updated
       #
+      ###########################
       def update_member(id, **attribs)
         member = member_by_id(id)
 
@@ -249,6 +268,7 @@ module Windoo
       # @param index [Integer] the new index for the member
       #
       # @return [void]
+      ###########################
       def move_member(member, index:)
         curr_idx = @managed_array.index { |m| m == member }
 
@@ -271,6 +291,7 @@ module Windoo
       #
       # @return [Object] The object that was removed from the array
       #
+      ###########################
       def delete_member(id)
         member = member_by_id(id)
 
@@ -290,6 +311,7 @@ module Windoo
       #
       # @return [void]
       #
+      ###########################
       def delete_all_members
         @managed_array.each { |member| member.delete if member.respond_to? :delete }
         @managed_array = []
@@ -304,6 +326,7 @@ module Windoo
       #
       # @return [Object] The object with the given id
       #
+      ###########################
       def member_by_id(id)
         member = @managed_array.find { |m| m.send(primary_id_key) == id }
         return member if member
@@ -312,10 +335,12 @@ module Windoo
       end
 
       # The primary
+      ###########################
       def primary_id_key
         @primary_id_key ||= self.class::MEMBER_CLASS.primary_id_key
       end
 
+      ###########################
       def container_primary_id_key
         @container_primary_id_key ||= @container.class.primary_id_key
       end
