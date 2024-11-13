@@ -53,6 +53,37 @@ module Windoo
       @managed_array.map { |p| [p.patchId, p.version] }.to_h
     end
 
+    # @return [Hash {Integer => String}] The Versions => Patch ID installed
+    #   by the patch.
+    ############################
+    def versions_to_patchIds
+      @managed_array.map { |p| [p.version, p.patchId] }.to_h
+    end
+
+    # @return [Hash {Integer => String}] The Versions for this title
+    #
+    ##################################
+    def all_versions
+      @managed_array.map(&:version)
+    end
+
+    # get a patch by id or version
+    #
+    # @param ident [Integer, String] the patchId or version to return
+    #
+    # @return [Windoo::Patch] the patch object for the ident
+    ###########################
+    def patch(ident)
+      case ident
+      when Integer
+        find_by_attr(:patchId, ident)
+      when String
+        find_by_attr(:version, ident)
+      else
+        raise ArgumentError, 'ident must be an Integer patchId, or a String Version'
+      end
+    end
+
     # Add a Patch to this SoftwareTitle. NOTE: patches cannot be
     # enabled when added, you must call 'enable' on them after creating
     # any necessary sub-objects.
