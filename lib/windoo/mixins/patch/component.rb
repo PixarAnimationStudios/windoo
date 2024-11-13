@@ -85,6 +85,7 @@ module Windoo
 
           @component = Windoo::Component.create(
             container: self,
+            cnx: cnx,
             name: name,
             version: version
           )
