@@ -131,7 +131,12 @@ module Windoo
           # validate all init values
           json_attributes.each do |attr_name, attr_def|
             init_val = init_data[attr_name]
-            Windoo::Validate.not_nil init_val, msg: "Value for #{attr_name}: must be provided" if attr_def[:required]
+            if attr_def[:required]
+              Windoo::Validate.not_nil(
+                init_val,
+                msg: "Value for #{attr_name}: must be provided"
+              )
+            end
 
             init_data[attr_name] = Windoo::Validate.json_attr init_val, attr_def: attr_def, attr_name: attr_name
           end
