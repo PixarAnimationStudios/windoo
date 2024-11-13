@@ -27,6 +27,6 @@
 # main module
 module Windoo
 
-  VERSION = '0.1.0b1'
+  VERSION = '0.1.0b2'
 
 end # module
