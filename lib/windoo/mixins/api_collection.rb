@@ -371,6 +371,19 @@ module Windoo
         handle_update_response(resp)
       end
 
+      # Remove the cnx  object from
+      # the instance_variables used to create
+      # pretty-print (pp) output.
+      #
+      # @return [Array] the desired instance_variables
+      ####################
+      def pretty_print_instance_variables
+        vars = instance_variables.sort
+        vars.delete :@cnx
+        vars.delete :@container
+        vars
+      end
+
       # Private Instance Methods
       ####################
       private
