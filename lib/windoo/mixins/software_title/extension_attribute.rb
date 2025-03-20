@@ -110,6 +110,8 @@ module Windoo
           @extensionAttribute = nil
 
           deleted_id
+        rescue Windoo::NoSuchItemError
+          nil
         end
 
       end # module ExtensionAttribute
