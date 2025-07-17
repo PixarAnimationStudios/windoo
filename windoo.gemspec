@@ -1,4 +1,4 @@
-# Copyright 2022 Pixar
+# Copyright 2025 Pixar
 #
 #    Licensed under the Apache License, Version 2.0 (the "Apache License")
 #    with the following modification; you may not use this file except in
@@ -36,7 +36,7 @@ Gem::Specification.new do |s|
   s.date        = Time.now.strftime('%F')
   s.summary     = 'Ruby interface to the REST API of the Jamf Title Editor, formerly known as Kinobi.'
   s.description = <<~EODDESC
-    Mace Windoo was a colleague of Obi-Wan Kenobi
+    Mace Windu was a colleague of Obi-Wan Kenobi
   EODDESC
 
   # Files

@@ -1,4 +1,4 @@
-# Copyright 2022 Pixar
+# Copyright 2025 Pixar
 #
 #    Licensed under the Apache License, Version 2.0 (the "Apache License")
 #    with the following modification; you may not use this file except in
@@ -149,7 +149,7 @@ module Windoo
       # get the body of the error response in a readable format
       def parse_http_error_body(resp)
         err_text = +''
-        errs_in_resp = resp.body[:errors].map do |err_hash|
+        resp.body[:errors].map do |err_hash|
           err_text << "Code: #{err_hash[:code]}\n"
           err_hash.each do |k, v|
             next if k == :code

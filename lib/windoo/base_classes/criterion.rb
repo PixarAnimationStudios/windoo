@@ -1,4 +1,4 @@
-# Copyright 2022 Pixar
+# Copyright 2025 Pixar
 #
 #    Licensed under the Apache License, Version 2.0 (the "Apache License")
 #    with the following modification; you may not use this file except in
@@ -181,9 +181,10 @@ module Windoo
       def initialize(**init_data)
         super
         # if #super didn't set @and_or, set it now
-        if @and_or.nil?
-          @and_or = @init_data[:and] == false ? :or : :and
-        end
+        return unless @and_or.nil?
+
+        @and_or = @init_data[:and] == false ? :or : :and
+        
       end
 
       # Public Instance Methods

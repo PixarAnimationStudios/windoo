@@ -1,4 +1,4 @@
-# Copyright 2022 Pixar
+# Copyright 2025 Pixar
 #
 #    Licensed under the Apache License, Version 2.0 (the "Apache License")
 #    with the following modification; you may not use this file except in
@@ -77,7 +77,7 @@ module WindooZeitwerkConfig
 
     # ignore files at the top level
     ####
-    top = Pathname.new(__dir__).parent
+    Pathname.new(__dir__).parent
     # loader.ignore "#{top}/some_top_level_file.rb"
 
     # ignore things that are manually loaded by our code
