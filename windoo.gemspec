@@ -32,7 +32,10 @@ Gem::Specification.new do |s|
   s.authors     = ['Chris Lasell']
   s.email       = 'windoo@pixar.com'
   s.homepage    = 'http://pixaranimationstudios.github.io/depot3/'
-  s.license     = 'Nonstandard'
+
+  # s.license     = 'Nonstandard'
+  s.license     = 'LicenseRef-LICENSE.txt'
+
   s.date        = Time.now.strftime('%F')
   s.summary     = 'Ruby interface to the REST API of the Jamf Title Editor, formerly known as Kinobi.'
   s.description = <<~EODDESC
@@ -53,7 +56,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'pixar-ruby-extensions', '~>1.0'
 
   # https://github.com/fxn/zeitwerk MIT License (no dependencies)
-  s.add_runtime_dependency 'zeitwerk', '~> 2.5', '>= 2.5.4'
+  s.add_runtime_dependency 'zeitwerk', '~> 2.5'
 
   # https://github.com/lostisland/faraday: MIT License
   s.add_runtime_dependency 'faraday', '~> 2.8'
