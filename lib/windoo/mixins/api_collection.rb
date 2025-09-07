@@ -193,6 +193,9 @@ module Windoo
           end
 
           cnx.delete("#{self::RSRC_PATH}/#{primary_ident}")
+        rescue Windoo::NoSuchItemError
+          # wasn't there to begin with
+          nil
         end
 
       end # module ClassMethods
