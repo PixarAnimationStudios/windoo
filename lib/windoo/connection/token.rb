@@ -374,6 +374,7 @@ module Windoo
               end
             end # loop
           end # thread
+        @keep_alive_thread.name = "Windoo keep_alive #{tenantId} (#{@login_time})"
       end # start_keep_alive
 
       # Kills the @keep_alive_thread, if it exists, and sets
