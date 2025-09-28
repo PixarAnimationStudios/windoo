@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.version     = Windoo::VERSION
   s.authors     = ['Chris Lasell']
   s.email       = 'windoo@pixar.com'
-  s.homepage    = 'http://pixaranimationstudios.github.io/depot3/'
+  s.homepage    = 'https://github.com/PixarAnimationStudios/windoo'
 
   # s.license     = 'Nonstandard'
   s.license     = 'LicenseRef-LICENSE.txt'
@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.date        = Time.now.strftime('%F')
   s.summary     = 'Ruby interface to the REST API of the Jamf Title Editor, formerly known as Kinobi.'
   s.description = <<~EODDESC
-    Mace Windu was a colleague of Obi-Wan Kenobi
+    Windoo provides a Ruby interface to the REST API of the [Jamf Title Editor](https://docs.jamf.com/title-editor/documentation/About_Title_Editor.html), formerly known as 'Kinobi'. The Title Editor is a 'patch source' provided to users of Jamf Pro that provides a way to manage macOS software titles and their versions. Windoo allows ruby developers to interact with the Title Editor's API to automate tasks such as creating, updating, and managing patches and related resources.
   EODDESC
 
   # Files
