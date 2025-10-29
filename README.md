@@ -11,6 +11,7 @@ As with ruby-jss, the entire API is not implemented here, only the objects neces
 See also:
 - [Documentation about using the Title Editor via its GUI WebApp](https://docs.jamf.com/title-editor/documentation/index.html)
 - [Documentation about the underlying REST API used by Windoo](https://developer.jamf.com/title-editor/reference)
+- [The detailed ruby documentation for windoo](https://www.rubydoc.info/gems/windoo)
 
 Usage:
 
