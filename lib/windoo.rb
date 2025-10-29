@@ -16,6 +16,9 @@ require 'time'
 require 'pixar-ruby-extensions'
 require 'faraday' # >= 0.17.0
 
+# Set a default user-agent for Faraday requests
+Faraday.default_connection_options = { headers: { user_agent: "windoo v#{Windoo::VERSION}/Faraday v#{Faraday::VERSION}" } }
+
 # Zeitwerk
 ######
 
