@@ -16,9 +16,6 @@ require 'time'
 require 'pixar-ruby-extensions'
 require 'faraday' # >= 0.17.0
 
-# Set a default user-agent for Faraday requests
-Faraday.default_connection_options = { headers: { user_agent: "windoo/#{Windoo::VERSION} Faraday/#{Faraday::VERSION}" } }
-
 # Zeitwerk
 ######
 
@@ -57,3 +54,7 @@ end # module Windoo
 
 # testing zeitwerk loading, if the correct file is present
 WindooZeitwerkConfig.eager_load_for_testing
+
+# Set a default user-agent for Faraday requests
+# do thise after zeitwerk has loaded Constants
+Faraday.default_connection_options = { headers: { user_agent: "windoo/#{Windoo::VERSION} Faraday/#{Faraday::VERSION}" } }
